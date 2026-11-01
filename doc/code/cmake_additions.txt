@@ -1,0 +1,123 @@
+// ============================================================
+// CMake 编译配置 — MOSS 550W 音频适配
+//
+// 结论：现有 main/CMakeLists.txt 已正确配置，
+// 音频适配不需要新增任何编译单元或头文件路径。
+// 下方是现状分析和可选清理项。
+// ============================================================
+
+// ============================================================
+// 一、现有配置分析 (main/CMakeLists.txt)
+// ============================================================
+
+// --- 1) 板卡源文件自动包含 (第 598 行) ---
+//   已通过 GLOB 自动扫描 boards/moss_550w/*.{cc,c}
+//
+//    file(GLOB BOARD_SOURCES
+//        ${CMAKE_CURRENT_SOURCE_DIR}/boards/${BOARD_TYPE}/*.cc
+//        ${CMAKE_CURRENT_SOURCE_DIR}/boards/${BOARD_TYPE}/*.c
+//    )
+//    list(APPEND SOURCES ${BOARD_SOURCES})
+//
+//   → board_moss_550w.cc 会被自动编译，无需在 CMakeLists.txt 中显式列出
+
+// --- 2) NoAudioCodecSimplexPdm 已在主源列表中 (第 4 行) ---
+//    set(SOURCES ...
+//        "audio/codecs/no_audio_codec.cc"
+//        ...)
+//
+//   → I2S TX + PDM RX 的实现代码已被编译，无需改动
+
+// --- 3) WifiBoard / Button 等板卡通用组件 (第 43-45 行) ---
+//    file(GLOB BOARD_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/boards/common/*.cc)
+//    list(APPEND SOURCES ${BOARD_COMMON_SOURCES})
+//    list(APPEND INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/boards/common)
+//
+//   → WifiBoard 基类、Button、I2C 框架代码均可用
+
+// --- 4) MOSS 550W 专属段 (第 242-256 行) ---
+//    elseif(CONFIG_BOARD_TYPE_MOSS_550W)
+//        set(BOARD_TYPE "moss_550w")
+//        set(BUILTIN_TEXT_FONT font_puhui_basic_20_4)
+//        set(BUILTIN_ICON_FONT font_awesome_20_4)
+//        set(DEFAULT_EMOJI_COLLECTION twemoji_64)
+//
+//        set(BOARD_EXTRA_SOURCES
+//            "${CMAKE_CURRENT_SOURCE_DIR}/boards/moss_550w/motor_control.c"
+//            "${CMAKE_CURRENT_SOURCE_DIR}/boards/moss_550w/display_manager.cc"
+//        )
+//        list(APPEND SOURCES ${BOARD_EXTRA_SOURCES})
+//
+//        list(APPEND INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/boards/${BOARD_TYPE}")
+//
+//   → BOARD_TYPE 已设置、头文件搜索路径已添加、额外源文件已包含
+//   → 上述配置对音频适配完全足够，无需修改
+
+
+// ============================================================
+// 二、可选清理项（非必须，但建议）
+// ============================================================
+
+// [可选] 如果 MOSS 550W 确定放弃屏幕，可删除以下源文件引用:
+//   "${CMAKE_CURRENT_SOURCE_DIR}/boards/moss_550w/display_manager.cc"
+//
+//   同时删除 boards/moss_550w/ 目录下的:
+//   - display_manager.cc
+//   - display_manager.h
+//
+//   → 这不会影响音频功能。保留也无害。
+
+// [可选] motor_control.c 目前依赖旧版 BoardMoss550w stub。
+//   待 board_moss_550w.cc 替换为新版 Moss550WBoard 后，
+//   需要在 .cc 或 .c 文件中添加 #include "config.h" 等适配。
+//   如果电机控制在新版 Board 类中尚未实现，可以先注释掉:
+//
+//    set(BOARD_EXTRA_SOURCES
+//        "${CMAKE_CURRENT_SOURCE_DIR}/boards/moss_550w/motor_control.c"
+//        // "${CMAKE_CURRENT_SOURCE_DIR}/boards/moss_550w/display_manager.cc"  // 如弃用屏幕
+//    )
+
+
+// ============================================================
+// 三、验证清单 — 音频适配所需的所有条件
+// ============================================================
+
+// [✅]  Board source file:     boards/moss_550w/board_moss_550w.cc
+//                               → 通过 GLOB 自动编译 (CMakeLists.txt:598)
+//
+// [✅]  Audio codec source:    audio/codecs/no_audio_codec.cc
+//                               → 已在 SOURCES 列表中 (CMakeLists.txt:4)
+//
+// [✅]  Board common headers:  boards/common/wifi_board.h, board.h, button.h
+//                               → 通过 GLOB 自动包含 (CMakeLists.txt:43-45)
+//
+// [✅]  Board config header:   boards/moss_550w/config.h
+//                               → 目录已加入 INCLUDE_DIRS (CMakeLists.txt:256)
+//
+// [✅]  WifiStation header:    components/xxx/wifi_station.h
+//                               → ESP-IDF 组件，自动可找到
+//
+// [✅]  GPIO driver:           driver/gpio.h
+//                               → ESP-IDF 内置驱动，自动可找到
+//
+// → 所有条件已满足，不需要修改 CMakeLists.txt
+
+
+// ============================================================
+// 四、如果仍要修改 CMakeLists.txt 的参考 diff
+// ============================================================
+//
+// 除非要删除 display_manager 或调整字体，否则不需要任何修改。
+// 如有必要的最小清理 diff:
+//
+// --- a/main/CMakeLists.txt
+// +++ b/main/CMakeLists.txt
+// @@ -249,7 +249,7 @@ elseif(CONFIG_BOARD_TYPE_MOSS_550W)
+//      # 如果有额外的源文件（电机控制等），在这里添加
+//      set(BOARD_EXTRA_SOURCES
+//          "${CMAKE_CURRENT_SOURCE_DIR}/boards/moss_550w/motor_control.c"
+// -        "${CMAKE_CURRENT_SOURCE_DIR}/boards/moss_550w/display_manager.cc"
+// +        // display_manager.cc已被弃用（屏幕已放弃）
+//      )
+//      list(APPEND SOURCES ${BOARD_EXTRA_SOURCES})
+//

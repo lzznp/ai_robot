@@ -1,0 +1,16 @@
+{
+    "target": "esp32s3",
+    "builds": [
+        {
+            "name": "lingkong-s3-moc-cam-1.54tft",
+            "sdkconfig_append": [
+                "CONFIG_CAMERA_OV2640=y",
+                "CONFIG_CAMERA_OV2640_AUTO_DETECT_DVP_INTERFACE_SENSOR=y",
+                "CONFIG_CAMERA_OV2640_DVP_YUV422_240X240_25FPS=y",
+                "CONFIG_CAMERA_OV3660=n",
+                "CONFIG_CAMERA_OV3660_AUTO_DETECT_DVP_INTERFACE_SENSOR=y",
+                "CONFIG_CAMERA_OV3660_DVP_YUV422_240X240_24FPS=y"                
+            ]
+        }
+    ]
+}

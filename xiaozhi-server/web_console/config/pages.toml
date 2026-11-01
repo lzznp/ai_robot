@@ -1,0 +1,45 @@
+
+[[pages]]
+name = "固件相关"
+icon = "🔍"   # 用实际emoji替代:material/history:
+is_section = true
+
+
+[[pages]]
+path = "pages/固件测试.py"
+name = "固件测试"
+icon = "📥"
+
+[[pages]]
+path = "pages/设备管理.py"
+name = "设备管理"
+icon = "📥"
+
+
+[[pages]]
+path = "pages/能力库管理.py"
+name = "能力库管理"
+icon = "📥"
+
+
+[[pages]]
+name = "业务相关"
+icon = "🔍"   # 用实际emoji替代:material/history:
+is_section = true
+
+[[pages]]
+path = "pages/场景编排.py"
+name = "场景编排"
+icon = "📥"
+
+
+
+[[pages]]
+name = "开发测试"
+icon = "🔍"   # 用实际emoji替代:material/history:
+is_section = true
+
+[[pages]]
+path = "pages/聊天测试.py"
+name = "聊天测试"
+icon = "📥"

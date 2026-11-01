@@ -1,0 +1,477 @@
+AI机器人管理服务器 —— 完整设计文档
+文档版本：v1.0
+最后更新：2026-06-16
+维护者：[你的名字]
+状态：设计中（逐步实现）
+
+一、项目愿景
+一句话描述：让多个桌面机器人成为一个"AI剧团"，由LLM统一编导，服务器统一调度，机器人只需执行。
+
+核心价值
+所有机器人共享一个"大脑"（LLM）
+
+机器人之间可以协作、对话、即兴表演
+
+场景可插拔，新功能不破坏原有系统
+
+开发者不控制具体行为，只设定场景和规则
+
+二、系统架构总览
+2.1 整体定位
+角色	说明
+AI机器人管理服务器	整个系统的唯一大脑和统一调度中心
+机器人（ESP32）	纯执行终端：播报语音、执行动作、显示表情
+LLM（DeepSeek）	唯一决策引擎：所有智能内容由此生成
+外部系统	简历库、游戏服务器、Streamlit页面等（只提供数据，不参与决策）
+2.2 核心原则
+原则	说明
+事件驱动	所有行为由事件触发（人声、定时、传感器、外部API），无主动轮询
+场景插拔	每个场景是一个独立插件，新增场景不改核心代码
+优先级可控	事件和场景都有优先级，高优先级可打断/融合低优先级
+LLM统一出口	所有智能决策经过唯一的LLM调用点
+状态外部化	会话历史、场景状态、机器人状态存在Redis，服务器无状态可重启
+协议标准化	所有通信使用统一JSON格式
+2.3 顶层模块（7个模块）
+text
+事件输入层 → 优先级队列 → 核心编排器 → 场景插件层 → Prompt构造器 → LLM调用层 → 响应分发器
+模块	职责	是否可插拔
+1. 事件输入层	接收所有外部输入（HTTP/WebSocket/MQTT）	✅ 可扩展协议
+2. 优先级队列	按优先级排序事件，决定调度顺序	❌ 核心组件
+3. 核心编排器	场景栈管理、插件加载、状态读写	❌ 核心组件
+4. 场景插件层	每个场景独立实现（闲聊、面试、游戏等）	✅ 完全可插拔
+5. Prompt构造器	根据当前场景组装完整Prompt	❌ 核心组件
+6. LLM调用层	调用LLM API（唯一出口）	✅ 可切换后端
+7. 响应分发器	解析LLM返回，分发到不同目标	✅ 可扩展目标
+三、模块详细设计
+模块1：事件输入层
+职责：接收所有外部输入，转换为标准事件格式
+
+支持的输入源：
+
+麦克风音频 → WebSocket → 文本（由ASR处理）
+
+用户文本输入（Web/API）
+
+定时器触发
+
+外部API调用（简历查询、游戏事件等）
+
+系统内部事件（场景切换、打断等）
+
+标准事件格式：
+
+json
+{
+  "id": "evt_xxx",
+  "type": "human_speech",     // 事件类型
+  "source": "mic",            // 来源
+  "priority": 8,              // 优先级 0-10
+  "data": {
+    "text": "大家好",          // 文本内容（如有）
+    "user_id": "user_001",    // 用户标识
+    "session_id": "sess_xxx"  // 会话标识
+  },
+  "timestamp": 1704067200,
+  "ttl": 30                   // 过期时间（秒）
+}
+支持的事件类型：
+
+human_speech - 人声输入
+
+text_input - 文本输入
+
+timer_trigger - 定时触发
+
+scene_switch - 场景切换请求
+
+interrupt - 打断请求
+
+external_api - 外部API调用
+
+game_event - 游戏事件
+
+heartbeat - 设备心跳
+
+system_event - 系统事件
+
+模块2：优先级队列
+职责：按优先级排序事件，决定调度顺序
+
+优先级定义（0-10，数字越大优先级越高）：
+
+优先级	场景类型	示例
+10	系统紧急	安全警告、紧急打断
+9	用户主动干预	用户叫停、手动触发
+8	用户主动对话	"大家好"、"瓦力过来"
+7	重要业务	简历面试、数据分析
+6	用户被动交互	回答用户问题
+5	场景游戏	成语游戏、象棋
+4	主动闲聊	机器人主动找话题
+3	娱乐表演	小品、即兴表演
+2	闲聊底座	基础对话
+1	背景氛围	环境音、背景音
+0	系统维护	日志记录、状态同步
+调度行为：
+
+当前场景优先级	新事件优先级	行为
+高	低	排队等待
+低	高	抢占（当前场景挂起）
+可共存	可共存	融合（两个场景同时活跃）
+模块3：核心编排器（不可插拔）
+职责：场景栈管理、插件加载、状态读写
+
+子模块：
+
+3.1 场景栈管理器
+python
+# 场景栈操作
+scene_stack.push(scene)     # 新场景入栈
+scene_stack.pop()           # 恢复上一个场景
+scene_stack.merge(scene)    # 融合场景
+scene_stack.current()       # 获取当前场景
+scene_stack.suspend_all()   # 全部挂起（用于紧急打断）
+3.2 插件加载器
+动态扫描 scenes/ 目录
+
+热加载/热卸载场景插件
+
+插件版本管理
+
+3.3 状态管理器
+Redis读写会话状态
+
+场景状态持久化
+
+机器人状态同步
+
+Redis数据结构：
+
+yaml
+# 会话历史
+session:{session_id}:history -> List[Message]
+
+# 场景状态
+scene:{scene_id}:state -> Hash {key: value}
+
+# 机器人状态
+robot:{device_id}:state -> Hash {
+  online: bool,
+  current_action: str,
+  current_scene: str,
+  capabilities: [...]
+}
+
+# 事件队列
+event:queue -> SortedSet (按优先级排序)
+模块4：场景插件层（可插拔）
+职责：每个场景独立实现
+
+插件接口：
+
+python
+class ScenePlugin:
+    # === 元数据 ===
+    id = "scene_id"                 # 唯一标识
+    name = "场景名称"               # 显示名称
+    version = "1.0.0"               # 版本号
+    priority = 5                    # 默认优先级
+    can_be_interrupted = True       # 是否可被打断
+    allow_interrupt_from = ["*"]    # 允许被哪些场景打断
+    on_interrupt = "pause"          # 被中断时行为: pause / stop / merge
+    auto_resume = True              # 是否自动恢复
+
+    # === 生命周期 ===
+    async def on_enter(self, context):
+        """进入场景时调用"""
+        pass
+
+    async def on_exit(self, context):
+        """退出场景时调用"""
+        pass
+
+    async def on_pause(self, context):
+        """被暂停时调用"""
+        pass
+
+    async def on_resume(self, context):
+        """恢复时调用"""
+        pass
+
+    async def on_interrupt(self, context):
+        """被更高优先级事件打断时调用"""
+        pass
+
+    # === 核心方法 ===
+    async def build_prompt(self, context, history, external_data):
+        """构建Prompt模板"""
+        raise NotImplementedError
+
+    async def parse_response(self, response):
+        """解析LLM返回，返回标准动作"""
+        raise NotImplementedError
+
+    async def execute(self, action):
+        """执行动作（调用响应分发器）"""
+        pass
+模块5：Prompt构造器
+职责：根据当前场景插件提供的模板，组装完整Prompt
+
+变量注入：
+
+text
+{system_prompt}     - 系统提示词
+{scene_context}     - 场景上下文
+{history}           - 对话历史
+{current_action}    - 当前动作
+{resume_data}       - 恢复数据
+{robot_status}      - 机器人状态
+{external_data}     - 外部数据（简历、游戏状态等）
+输出格式：每个场景自定义，但建议统一为：
+
+json
+{
+  "response": "文本内容",
+  "actions": [
+    {"target": "moss", "type": "speak", "text": "你好"},
+    {"target": "walle", "type": "action", "action": "wave"},
+    {"target": "doly", "type": "emotion", "emotion": "happy"}
+  ],
+  "scene_state": {"key": "value"}
+}
+模块6：LLM调用层
+职责：调用LLM API，唯一出口
+
+支持的LLM后端：
+
+DeepSeek（主要）
+
+OpenAI（备用）
+
+本地Ollama（3060服务器）
+
+配置示例：
+
+yaml
+llm:
+  provider: "deepseek"
+  deepseek:
+    api_key: "sk-xxx"
+    base_url: "https://api.deepseek.com/v1"
+    model: "deepseek-chat"
+    temperature: 0.7
+    max_tokens: 2048
+    timeout: 30
+模块7：响应分发器
+职责：解析LLM返回，分发到不同目标
+
+支持的目标：
+
+目标	协议	说明
+ESP32机器人	WebSocket	语音+动作指令
+屏幕显示	HTTP/WebSocket	显示信息
+日志系统	文件/数据库	记录交互
+外部API	HTTP	触发外部动作
+标准动作格式：
+
+json
+{
+  "target": "moss",
+  "type": "speak",
+  "text": "大家好，我是MOSS",
+  "voice": "zh-CN-YunxiNeural",
+  "action": "wave",
+  "emotion": "happy"
+}
+四、场景栈行为规则
+场景栈状态	新事件优先级	行为
+当前场景优先级高	新事件优先级低	排队等待
+当前场景优先级低	新事件优先级高	抢占（当前场景挂起）
+两者可共存	配置允许融合	融合（两个场景同时活跃）
+场景栈支持操作：
+
+push(scene) - 新场景入栈
+
+pop() - 恢复挂起的场景
+
+merge(scene) - 融合场景
+
+clear() - 清空栈（紧急）
+
+五、MVP场景清单
+场景	优先级	说明	状态
+闲聊	2	基础能力，所有场景的底座	待开发
+主动聊天	4	冷清时主动找话题	待开发
+简历分析	9	核心业务价值	待开发
+虚拟面试	8	多角色模拟面试	待开发
+小品表演	3	多角色即兴表演	待开发
+体感游戏	5	Kinect动作识别互动	待开发
+后续场景以插件形式逐步加入。
+
+六、硬件配置
+6.1 机器人清单
+名称	硬件	角色定位
+MOSS	悬挂式，水平电机、垂直电机、小屏幕	高冷、理性、总裁范
+Doly	小车，2个舵机（手臂）、2个电机（驱动）、2个圆形屏（眼睛）	活泼、可爱、前台
+瓦力	小车，2个舵机（手臂）、2个电机（驱动）、小屏幕	憨厚、老好人、求职者
+6.2 设备能力注册
+服务器预存每个机器人的能力：
+
+yaml
+moss:
+  capabilities:
+    - speak
+    - horizontal_rotation
+    - vertical_rotation
+    - screen_emotion
+    - screen_text
+  default_voice: "zh-CN-YunxiNeural"
+
+doly:
+  capabilities:
+    - speak
+    - arm_left
+    - arm_right
+    - wheel_forward
+    - wheel_backward
+    - eye_emotion
+  default_voice: "zh-CN-XiaoxiaoNeural"
+
+walle:
+  capabilities:
+    - speak
+    - arm_left
+    - arm_right
+    - wheel_forward
+    - wheel_backward
+    - screen_emotion
+    - screen_text
+  default_voice: "zh-CN-YunyangNeural"
+6.3 服务器部署
+服务器	用途	配置
+笔记本	xiaozhi-server + 游戏	日常开发测试
+3060服务器	Ollama 14B模型	本地LLM备用
+Streamlit页面	简历库、向量库、岗位管理	数据来源
+七、外部系统集成
+7.1 简历查询
+触发方式：用户说"瓦力，查一下今天的面试安排"
+数据源：Streamlit页面 → 简历向量库 → API
+集成方式：场景插件调用HTTP API
+
+7.2 体感游戏
+触发方式：用户说"来做广播操"
+数据源：Kinect捕获动作 → Python处理
+集成方式：游戏服务器发送事件到xiaozhi-server
+
+7.3 多角色对话
+核心机制：LLM一次返回多个角色的发言
+
+json
+[
+  {"role": "moss", "text": "大家好", "action": "wave"},
+  {"role": "doly", "text": "早上好", "action": "happy"},
+  {"role": "walle", "text": "嘿嘿", "action": "wave"}
+]
+八、关键设计决策（已确认）
+决策	结论
+场景之间是否允许同时活跃？	是（融合）
+高优先级事件是否一定打断？	是，但可配置
+被挂起的场景是否自动恢复？	是
+LLM是否知道所有活跃场景？	是（注入Prompt）
+场景插件是否需要独立存储？	是（每个场景存自己的状态）
+服务器是否有状态？	无状态（状态在Redis）
+多个服务器实例是否支持？	是（通过Redis共享状态）
+是否使用MCP？	否（管理服务器代替）
+机器人是否使用麦克风？	否（纯执行终端）
+机器人是否使用摄像头？	否（禁用）
+九、扩展性保证
+扩展场景	实现方式
+新增场景	新建插件文件，不改核心代码
+切换LLM	只改调用层配置
+新增输出目标	只改分发器
+修改优先级规则	只改调度器配置
+新增机器人	在硬件配置中添加，自动注册
+接入新协议	事件输入层扩展
+十、开发路线图
+Phase 0：基础验证（当前）
+跑通官方 xiaozhi-server
+
+三个机器人连接成功
+
+测试语音播报正常
+
+Phase 1：核心改造
+禁用ASR/VAD（设备不传音频）
+
+替换LLM为DeepSeek
+
+实现文本输入接口
+
+实现基础闲聊场景
+
+Phase 2：多角色对话
+实现多角色Prompt构造
+
+实现多设备同时下发
+
+实现角色分配逻辑
+
+Phase 3：场景系统
+实现场景栈管理器
+
+实现优先级队列
+
+实现场景插件框架
+
+实现闲聊、主动聊天场景
+
+Phase 4：业务场景
+实现简历分析场景
+
+实现虚拟面试场景
+
+实现小品表演场景
+
+Phase 5：外部集成
+集成简历API
+
+集成体感游戏
+
+实现Redis状态管理
+
+十一、参考文档
+文档	说明
+xiaozhi-esp32-server技术文档	官方架构和协议
+xiaozhi-esp32-server/README.md	官方部署文档
+DeepSeek API文档	LLM接口
+本设计文档	项目宪法
+附录：代码目录结构（建议）
+text
+xiaozhi-server/
+├── app.py                      # 启动入口
+├── config.yaml                 # 配置文件
+├── core/
+│   ├── orchestrator/           # 核心编排器
+│   │   ├── __init__.py
+│   │   ├── scene_stack.py      # 场景栈管理
+│   │   ├── priority_queue.py   # 优先级队列
+│   │   └── orchestrator.py     # 主编排器
+│   ├── scenes/                 # 场景插件
+│   │   ├── __init__.py
+│   │   ├── base.py             # 场景基类
+│   │   ├── chat.py             # 闲聊场景
+│   │   ├── proactive.py        # 主动聊天场景
+│   │   ├── resume.py           # 简历分析场景
+│   │   ├── interview.py        # 虚拟面试场景
+│   │   └── performance.py      # 小品表演场景
+│   ├── prompt/                 # Prompt构造器
+│   │   ├── __init__.py
+│   │   └── builder.py
+│   ├── dispatch/               # 响应分发器
+│   │   ├── __init__.py
+│   │   └── dispatcher.py
+│   ├── providers/              # AI服务提供商
+│   │   ├── llm/               # LLM调用层
+│   │   └── tts/               # TTS调用层
+│   └── utils/                  # 工具函数
+│       └── redis_manager.py    # Redis状态管理
+└── plugins_func/               # 原有插件（可复用）

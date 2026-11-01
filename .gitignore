@@ -1,0 +1,78 @@
+# ai_robot 项目的 .gitignore
+#
+# 这份是给"代码进 git、大文件不进"用的。写这份的直接原因：
+# 这个目录盘上 1.88 GB，其中 **892 MB 是一个语音识别模型文件**
+# （xiaozhi-server/models/SenseVoiceSmall/model.pt）—— GitHub 单文件上限 100 MB，
+# 它会被直接拒收；剩下的 913 MB 基本是 esp32 的编译产物，日志和 mp3 又是可再生的。
+# 所以这些东西一律不入库，需要时重新下载/重新编译。
+
+# ── 模型权重（几百 MB，可重新下载）──
+models/
+**/models/
+*.pt
+*.onnx
+*.jit
+*.pth
+*.bin
+*.safetensors
+
+# ── 编译产物（esp32 / platformio / python）──
+.pio/
+.pioenvs/
+.piolibdeps/
+build/
+**/build/
+dist/
+*.pyc
+__pycache__/
+**/__pycache__/
+.venv/
+venv/
+node_modules/
+**/node_modules/
+
+# ── 运行期产物：日志、临时、录音、音乐库 ──
+tmp/
+**/tmp/
+**/*.log
+logs/
+**/logs/
+music/
+**/music/
+*.wav
+*.pcm
+*.opus
+
+# ── 本地凭据 / 环境 ──
+.env
+*.env
+config.yaml.local
+**/config_secrets.*
+
+# ── 编辑器与系统 ──
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── 旧版本与"准备废弃"（留着占地方，但不必进版本库）──
+*-old/
+准备废弃/
+
+# ── 那个空掉的 .git（xiaozhi-server 里 2026-06-21 留下的残骸，不是真仓库）──
+xiaozhi-server/.git/
+
+# ── xiaozhi-server 的运行期真配置（含 API key / MQTT 签名密钥 / 各类 token）──
+# 这一份是服务器第一次跑起来时生成的，里面 50 多处凭据位置，其中确有可用真 key。
+# 模板是 xiaozhi-server/config.yaml（只有注释和空值），模板照常入库。
+xiaozhi-server/data/.config.yaml
+**/data/.config.yaml
+
+# ── 运行期数据库（设备注册、会话记录，二进制且会一直变）──
+**/data/*.db
+**/data/*.db-wal
+**/data/*.db-shm
+
+# ── DSH 智能体的运行期状态（跟这个项目无关）──
+.deepseek/
