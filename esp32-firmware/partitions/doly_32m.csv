@@ -1,0 +1,18 @@
+# ESP32-P4 / 32MB Flash —— doly 板分区表
+#
+# 布局照 Doly 开源工程的 partitions/32m.csv（总容量 0x2000000 = 32MB）：
+#   nvs        0x0009000  1.02MB   NVS 参数（WiFi 凭证、激活信息、音量…）
+#   phy_init   0x010D000     4KB   RF 校准
+#   factory    0x0110000    12MB   应用固件
+#   model      0x0D10000     4MB   语音模型 srmodels.bin（esp-sr 必需）
+#   assets     0x1110000     8MB   可下载 UI 资源（字体/表情/主题）
+#   behavior   0x1910000     2MB   行为资源 JSON 挂 /resources（剧场编排用，先留着）
+#
+# 注意：factory 必须 0x10000 对齐 ⇒ phy_init 之后留了 0x2000 空隙。
+# 改动分区布局后必须整片重烧（先 erase-flash 再 flash 最稳），别只烧 app。
+nvs,      data, nvs,      0x9000,    1040K,
+phy_init, data, phy,      0x10D000,  4K,
+factory,  app,  factory,  0x110000,  12M,
+model,    data, spiffs,   0xD10000,  4M,
+assets,   data, spiffs,   0x1110000, 8M,
+behavior, data, spiffs,   0x1910000, 2M,

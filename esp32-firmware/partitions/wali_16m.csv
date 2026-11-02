@@ -1,0 +1,16 @@
+# 瓦力（wali）专用分区表 — 16MB Flash
+#
+# 为什么单独写一张：
+#   · partitions/v2/16m.csv 有 assets 但**没有 model** -> esp-sr 打包不了唤醒词模型
+#     （现象：启动报 MODEL_LOADER: Can not find model in partition table，无法唤醒）
+#   · partitions/v1/16m.csv 有 model 但**没有 assets** -> 字体/表情资源没地方放
+#   所以这里两样都要。
+#
+# Name,   Type, SubType, Offset,    Size,     Flags
+nvs,       data, nvs,     0x9000,    0x4000,
+otadata,   data, ota,     0xd000,    0x2000,
+phy_init,  data, phy,     0xf000,    0x1000,
+model,     data, spiffs,  0x10000,   0xF0000,
+ota_0,     app,  ota_0,   0x100000,  0x300000,
+ota_1,     app,  ota_1,   0x400000,  0x300000,
+assets,    data, spiffs,  0x700000,  0x600000,

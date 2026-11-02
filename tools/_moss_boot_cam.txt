@@ -1,0 +1,153 @@
+I (101) cpu_start: GPIO 44 and 43 are used as console UART I/O pESP-ROM:esp32s3-20210327
+Build:Mar 27 2021
+rst:0x15 (USB_UART_CHIP_RESET),boot:0xb (SPI_FAST_FLASH_BOOT)
+Saved PC:0x4038303e
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce2820,len:0x548
+load:0x403c8700,len:0xc3c
+load:0x403cb700,len:0x2d9c
+entry 0x403c8908
+I (35) octal_psram: vendor id    : 0x0d (AP)
+I (35) octal_psram: dev id       : 0x02 (generation 3)
+I (35) octal_psram: density      : 0x03 (64 Mbit)
+I (37) octal_psram: good-die     : 0x01 (Pass)
+I (41) octal_psram: Latency      : 0x01 (Fixed)
+I (45) octal_psram: VCC          : 0x01 (3V)
+I (49) octal_psram: SRF          : 0x01 (Fast Refresh)
+I (54) octal_psram: BurstType    : 0x01 (Hybrid Wrap)
+I (59) octal_psram: BurstLen     : 0x01 (32 Byte)
+I (63) octal_psram: Readlatency  : 0x02 (10 cycles@Fixed)
+I (68) octal_psram: DriveStrength: 0x00 (1/1)
+I (72) MSPI Timing: Enter psram timing tuning
+I (77) esp_psram: Found 8MB PSRAM device
+I (80) esp_psram: Speed: 80MHz
+I (83) cpu_start: Multicore app
+I (97) cpu_start: GPIO 44 and 43 are used as console UART I/O pins
+I (98) cpu_start: Pro cpu start user code
+I (98) cpu_start: cpu freq: 240000000 Hz
+I (99) app_init: Application information:
+I (103) app_init: Project name:     xiaozhi
+I (107) app_init: App version:      2.0.5
+I (110) app_init: Compile time:     Oct 31 2026 16:34:52
+I (115) app_init: ELF file SHA256:  e64abb489...
+I (120) app_init: ESP-IDF:          v5.5.4
+I (124) efuse_init: Min chip rev:     v0.0
+I (127) efuse_init: Max chip rev:     v0.99 
+I (131) efuse_init: Chip rev:         v0.2
+I (135) heap_init: Initializing. RAM available for dynamic allocation:
+I (142) heap_init: At 3FCAEA78 len 0003AC98 (235 KiB): RAM
+I (147) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM
+I (152) heap_init: At 3FCF0000 len 00008000 (32 KiB): DRAM
+I (157) heap_init: At 600FE000 len 00001FD8 (7 KiB): RTCRAM
+I (162) esp_psram: Adding pool of 8192K of PSRAM memory to heap allocator
+I (169) spi_flash: detected chip: generic
+I (173) spi_flash: flash io: qio
+I (176) sleep_gpio: Configure to isolate all GPIO pins in sleep state
+I (182) sleep_gpio: Enable automatic switching of GPIO sleep configuration
+I (189) main_task: Started on CPU0
+I (199) esp_psram: Reserving pool of 64K of internal memory for DMA/internal allocations
+I (199) main_task: Calling app_main()
+I (229) Board: UUID=3af80cb4-0d8e-406a-8c89-ab89c9216eea SKU=moss_550w
+I (229) button: IoT Button Version: 4.1.4
+I (229) Moss550W: Initializing MOSS 550W Board...
+I (229) Moss550W: Install SSD1306 driver
+I (229) Moss550W: SSD1306 driver installed
+I (239) Moss550W: Turning display on
+I (339) Display: Power management not supported
+I (339) OledDisplay: Initialize LVGL
+I (339) OledDisplay: Adding OLED display
+I (339) LVGL: Starting LVGL task
+I (349) Moss550W: Initializing DVP camera...
+I (379) ov2640: Detected Camera sensor PID=0x26
+I (469) Esp32Camera: Camera init success
+I (469) Moss550W: MOSS 550W Board initialized successfully!
+I (469) Application: STATE: starting
+I (469) NoAudioCodec: Simplex channels created
+I (469) AudioCodec: Set input enable to true
+I (479) AudioCodec: Set output enable to true
+I (479) AudioCodec: Audio codec started
+I (489) pp: pp rom version: e7ae62f
+I (489) net80211: net80211 rom version: e7ae62f
+I (499) wifi:wifi driver task: 3fcdc550, prio:23, stack:6144, core=0
+I (499) wifi:wifi firmware version: 0947e8b
+I (499) wifi:wifi certification version: v7.0
+I (509) wifi:config NVS flash: disabled
+I (509) wifi:config nano formatting: enabled
+I (519) wifi:Init data frame dynamic rx buffer num: 6
+I (519) wifi:Init dynamic rx mgmt buffer num: 5
+I (519) wifi:Init management short buffer num: 32
+I (529) wifi:Init dynamic tx buffer num: 32
+I (529) wifi:Init static tx FG buffer num: 2
+I (539) wifi:Init static rx buffer size: 1600
+I (539) wifi:Init static rx buffer num: 3
+I (539) wifi:Init dynamic rx buffer num: 6
+I (549) wifi_init: rx ba win: 3
+I (549) wifi_init: accept mbox: 6
+I (549) wifi_init: tcpip mbox: 16
+I (559) wifi_init: udp mbox: 6
+I (559) wifi_init: tcp mbox: 6
+I (559) wifi_init: tcp tx win: 5760
+I (569) wifi_init: tcp rx win: 5760
+I (569) wifi_init: tcp mss: 1440
+I (569) phy_init: phy_version 711,97bcf0a2,Aug 25 2025,19:04:10
+I (609) wifi:mode : sta (58:e6:c5:5a:2f:fc)
+I (609) wifi:enable tsf
+I (3019) WifiStation: Found AP: lz, BSSID: 50:92:6a:c9:d4:c1, RSSI: -21, Channel: 11, Authmode: 3
+W (3039) wifi:Password length matches WPA2 standards, authmode threshold changes from OPEN to WPA2
+I (4319) wifi:new:<11,0>, old:<1,0>, ap:<255,255>, sta:<11,0>, prof:1, snd_ch_cfg:0x0
+I (4319) wifi:state: init -> auth (0xb0)
+I (4319) wifi:state: auth -> assoc (0x0)
+I (4339) wifi:state: assoc -> run (0x10)
+I (4369) wifi:connected with lz, aid = 3, channel 11, BW20, bssid = 50:92:6a:c9:d4:c1
+I (4369) wifi:security: WPA2-PSK, phy: bgn, rssi: -21, cipher(pairwise:0x3, group:0x3), pmf:0
+I (4369) wifi:pm start, type: 1
+
+I (4379) wifi:dp: 1, bi: 102400, li: 3, scale listen interval from 307200 us to 307200 us
+I (4379) wifi:set rx beacon pti, rx_bcn_pti: 0, bcn_timeout: 25000, mt_pti: 0, mt_time: 10000
+I (4449) wifi:AP's beacon interval = 102400 us, DTIM period = 1
+I (5419) esp_netif_handlers: sta ip: 192.168.199.77, mask: 255.255.255.0, gw: 192.168.199.1
+I (5419) WifiStation: Got IP: 192.168.199.77
+I (5439) Assets: The storage free size is 21888 KB
+I (5439) Assets: The partition size is 8192 KB
+I (5519) Assets: The checksum calculation time is 75 ms
+I (5519) Assets: Refreshing display theme...
+I (5519) Application: STATE: activating
+I (5519) Ota: Current version: 2.0.5
+I (5519) Ota: OTA check url: http://192.168.199.106:8003/xiaozhi/ota/
+I (5549) wifi:<ba-add>idx:0 (ifx:0, 50:92:6a:c9:d4:c1), tid:0, ssn:0, winSize:64
+I (5849) HttpClient: Established new connection to 192.168.199.106:8003
+E (6609) EspTcp: TCP receive failed: -1
+I (6609) HttpClient: HTTP connection closed
+I (6609) Ota: No mqtt section found !
+I (6609) Ota: Current is the latest version
+I (6609) Ota: Running partition: ota_0
+I (6619) MCP: Add tool: self.get_device_status
+I (6619) MCP: Add tool: self.audio_speaker.set_volume
+I (6629) MCP: Add tool: self.screen.set_theme
+I (6629) MCP: Add tool: self.camera.take_photo
+I (6639) MCP: Add tool: self.get_system_info [user]
+I (6639) MCP: Add tool: self.reboot [user]
+I (6639) MCP: Add tool: self.upgrade_firmware [user]
+I (6649) MCP: Add tool: self.screen.get_info [user]
+I (6649) MCP: Add tool: self.screen.snapshot [user]
+I (6659) MCP: Add tool: self.screen.preview_image [user]
+I (6659) MCP: Add tool: self.assets.set_download_url [user]
+I (6669) SystemInfo: free sram: 141143 minimal sram: 135799
+I (6669) Application: STATE: idle
+I (6709) AudioService: OpusHead: version=1, channels=1, sample_rate=16000
+I (6709) Application: Device ready, auto-connecting to server...
+I (7709) Application: STATE: connecting
+I (7709) main_task: Returned from app_main()
+I (7709) WS: Connecting to websocket server: ws://192.168.199.106:8000/xiaozhi/v1/ with version: 1
+I (9779) WS: Session ID: 6c751517-2bf9-47ed-b3fb-8948cc81cb35
+I (9779) wifi:Set ps type: 0, coexist: 0
+
+I (9779) Application: STATE: listening
+E (9779) MODEL_LOADER: Can not find model in partition table
+I (9789) AFE: AFE Version: (1MIC_V250121)
+I (9789) AFE: Input PCM Config: total 1 channels(1 microphone, 0 playback), sample rate:16000
+I (9799) AFE: AFE Pipeline: [input] -> |VAD(WebRTC)| -> [output]
+I (9799) AfeAudioProcessor: Audio communication task started, feed size: 512 fetch size: 512
+I (9839) Application: 📩 OnIncomingJson: {"type":"mcp","payload":{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{"roots":{"listChanged":true},"sampling":{},"vision":{"url":"http://192.168.199.106:8003/mcp/vision/explain","token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjoiTG9ZMnRtUnZuYVItc0w1STd3aERTQzZtcGZHMFpWeHUzQUJLM3kxcm00c2NkN2trNnU2QmRQR0tueXdXZkdXWFhNU3gzSzNveVRrRXM5ZDFzeVp6d3QzOW1mQnNtN21vSndYZTQ3ZHVHT0JvMU9XbUxOd3hrQT09In0.kJ7ZaqIyneHu8P9ry98s1rEAG7JQMIlv5lhyke9_MNA"}},"clientInfo":{"name":"XiaozhiClient","version":"1.0.0"}}}}
+I (11259) Application: 📩 OnIncomingJson: {"type":"mcp","payload":{"jsonrpc":"2.0","id":2,"method":"tools/list"}}

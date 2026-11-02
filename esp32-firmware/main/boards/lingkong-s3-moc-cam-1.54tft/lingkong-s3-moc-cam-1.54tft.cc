@@ -14,6 +14,12 @@
 #include "motor_control.h"
 #include "servo_control.h"
 
+// ★ 新增：元件自检引擎（components/selftest/，和 MOSS 共用）
+#include "selftest.h"
+
+// 月球车自己的项表（boards/lingkong-s3-moc-cam-1.54tft/selftest_items.cc 里定义）
+extern "C" const st_config_t lingkong_selftest_config;
+
 #include <esp_log.h>
 #include <esp_sleep.h>
 #include <esp_lcd_panel_vendor.h>
@@ -199,6 +205,17 @@ private:
 
 public:
     LichuangDevBoard() : boot_button_(BOOT_BUTTON_GPIO) {
+#if LINGKONG_SELFTEST
+        // ========================================================
+        // 自检模式：屏/摄像头/WiFi/Application 全都不初始化，
+        // 只跑元件自检（各项自己按需初始化自己的外设）。
+        // 注意 st_run() 不会返回。
+        // ========================================================
+        ESP_LOGW(TAG, "================ SELF-TEST MODE ================");
+        ESP_LOGW(TAG, "不启动 WiFi / Application / 屏 / 摄像头");
+        ESP_LOGW(TAG, "BOOT 键单击换项，长按执行，结果看串口");
+        st_run(&lingkong_selftest_config);
+#else
         InitializePowerManager();
         InitializeI2c();
         InitializeSpi();
@@ -215,6 +232,7 @@ public:
 
         ESP_LOGI(TAG, "Motor and servo initialized!");
         ESP_LOGI(TAG, "✅ 运动控制系统已就绪，等待指令");
+#endif
     }
 
     // ============================================================

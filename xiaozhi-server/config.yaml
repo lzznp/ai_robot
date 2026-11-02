@@ -1,4 +1,4 @@
-# 在开发中，请在项目根目录创建data目录，然后在data目录创建名称为【.config.yaml】的空文件
+﻿# 在开发中，请在项目根目录创建data目录，然后在data目录创建名称为【.config.yaml】的空文件
 # 然后你想修改覆盖修改什么配置，就修改【.config.yaml】文件，而不是修改【config.yaml】文件
 # 系统会优先读取【data/.config.yaml】文件的配置，如果【.config.yaml】文件里的配置不存在，系统会自动去读取【config.yaml】文件的配置。
 # 这样做，可以最简化配置，保护您的密钥安全。
@@ -137,7 +137,7 @@ plugins:
   # 申请后通过这个链接可以找到自己的apihost：https://console.qweather.com/setting?lang=zh
   get_weather:
     api_host: "mj7p3y7naa.re.qweatherapi.com"
-    api_key: "a861d0d5e7bf4ee1a83d9a9e4f96d4da"
+    api_key: "你的api_key"
     default_location: "广州"
   # 获取新闻插件的配置，这里根据需要的新闻类型传入对应的url链接，默认支持社会、科技、财经新闻
   # 更多类型的新闻列表查看 https://www.chinanews.com.cn/rss/
@@ -235,7 +235,7 @@ selected_module:
   # 语音识别模块，默认使用FunASR本地模型
   ASR: FunASR
   # 将根据配置名称对应的type调用实际的LLM适配器
-  LLM: ChatGLMLLM
+  LLM: DeepSeekLLM
   # 视觉语言大模型
   VLLM: ChatGLMVLLM
   # TTS将根据配置名称对应的type调用实际的TTS适配器
@@ -649,7 +649,7 @@ LLM:
     # 可在这里找到你的api key https://platform.deepseek.com/
     model_name: deepseek-chat
     url: https://api.deepseek.com
-    api_key: 你的deepseek web key
+    api_key: 你的api_key
   ChatGLMLLM:
     # 定义LLM API类型
     type: openai

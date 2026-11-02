@@ -1,0 +1,34 @@
+app 镜像: 0x20000..0x410000
+
+=== 判据 ===
+command 通道             [Command] 收到新指令                            命中 1
+command payload日志      Payload                                    命中 2
+actions 计数日志           个动作                                        命中 1
+未知动作类型                 未知动作类型                                     命中 1
+系统命令 channel           Unknown system command                     命中 1
+code_stream            code_stream                                命中 3
+TaskQueue 锁日志          ProcessNextTask                            命中 1
+action: gpio           "gpio"                                     — 没有
+action: pwm            "pwm"                                      — 没有
+action: pulse_us       pulse_us                                   — 没有
+action: duty           "duty"                                     — 没有
+action: servo          "servo"                                    — 没有
+action: move           "move"                                     — 没有
+action: delay          "delay"                                    — 没有
+action: emotion        "emotion"                                  — 没有
+action: forward        "forward"                                  — 没有
+Action 逐条日志              [%d] Action: %s                          命中 1
+PWM 执行日志               pulse_us                                   — 没有
+GPIO 执行日志              (hold %d ms)                               — 没有
+运动控制就绪日志               运动控制系统已就绪                                  命中 1
+
+=== 含 'Command' 的字符串（9 条）===
+     [Command] 
+     [Command] Emotion: %s
+     [Command] TTS: %s
+    Command %d: %s
+    Command %s is invalid, please check format.
+    E (%lu) %s: Command ID%d, phrase ID%d: %s ---> Misspelling
+    I (%lu) %s: Command: %s, Text: %s, Action: %s
+    W (%lu) %s: [Command] 
+    prvProcessReceivedCommands

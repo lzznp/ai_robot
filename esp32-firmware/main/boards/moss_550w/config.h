@@ -8,6 +8,15 @@
 #include "driver/gpio.h"
 
 // ============================================================
+// ★ 自检模式开关（2026-10-19 新增）
+//   1 = 上电后不启动 WiFi/Application，直接进自检
+//       交互：BOOT 键单击换项、长按执行；结果走串口
+//       用于判定"元件/接线"问题，不依赖网络
+//   0 = 正常固件
+// ============================================================
+#define MOSS_SELFTEST 0
+
+// ============================================================
 // I2C (OLED)
 // ============================================================
 #define I2C_SDA_GPIO        GPIO_NUM_2
@@ -70,6 +79,35 @@
 #define LED_4020_GPIO       GPIO_NUM_48   // 第二组 (2颗)
 #define LED_1313_NUM        3
 #define LED_4020_NUM        2
+
+// ============================================================
+// 摄像头（DVP 8 位并行，插在 U13 那个 20 针座；别插 FPC1）
+//
+// 2026-10-31 由网表的"模块脚号"换算成 GPIO，换算规则用 I2S 三个已知脚校验过：
+//   网表 U8_17/U8_18/U8_19 = GPIO9/10/11，与 config.h 里 I2S LRCK/BCLK/DOUT 一致
+//
+// ⚠️ CAM_RST 在网表里是 U8_3 —— 那是模块的 EN 脚（同一网络挂着 R17 + C23 复位 RC），
+//    也就是摄像头复位被焊死在整机复位上，**软件不可控**，所以写 NC。
+// ⚠️ SCCB 与 OLED 共用同一条 I2C（GPIO1/GPIO2）。若摄像头 SCCB 地址是 0x3C，
+//    会与 SSD1306 OLED 撞地址；OV2640 是 0x30，不撞。
+// ============================================================
+#define CAMERA_PIN_PWDN     GPIO_NUM_47   // U8_24
+#define CAMERA_PIN_RESET    GPIO_NUM_NC   // U8_3 = EN，软件不可控
+#define CAMERA_PIN_XCLK     GPIO_NUM_21   // U8_23
+#define CAMERA_PIN_SIOD     GPIO_NUM_2    // SCCB SDA（= OLED 那条 I2C 的 SDA）
+#define CAMERA_PIN_SIOC     GPIO_NUM_1    // SCCB SCL
+#define CAMERA_PIN_D7       GPIO_NUM_40   // U8_33
+#define CAMERA_PIN_D6       GPIO_NUM_17   // U8_10
+#define CAMERA_PIN_D5       GPIO_NUM_18   // U8_11
+#define CAMERA_PIN_D4       GPIO_NUM_16   // U8_9
+#define CAMERA_PIN_D3       GPIO_NUM_41   // U8_34
+#define CAMERA_PIN_D2       GPIO_NUM_46   // U8_16
+#define CAMERA_PIN_D1       GPIO_NUM_45   // U8_26
+#define CAMERA_PIN_D0       GPIO_NUM_42   // U8_35
+#define CAMERA_PIN_VSYNC    GPIO_NUM_38   // U8_31
+#define CAMERA_PIN_HREF     GPIO_NUM_39   // U8_32
+#define CAMERA_PIN_PCLK     GPIO_NUM_15   // U8_8
+#define XCLK_FREQ_HZ        20000000
 
 // ============================================================
 // 电池 / 电压检测

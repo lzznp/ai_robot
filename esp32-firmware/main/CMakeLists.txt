@@ -229,6 +229,16 @@ elseif(CONFIG_BOARD_TYPE_WAVESHARE_S3_DUALEYE_LCD_1_28)
         "${CMAKE_CURRENT_SOURCE_DIR}/boards/waveshare-s3-dualeye-lcd-1.28")
 
 
+elseif(CONFIG_BOARD_TYPE_WALI)
+    set(BOARD_TYPE "wali")
+    # 128x32 OLED：字体必须用小的，20_4 太大（用户实测"字体有点大"）
+    set(BUILTIN_TEXT_FONT font_puhui_basic_14_1)
+    set(BUILTIN_ICON_FONT font_awesome_14_1)
+    set(DEFAULT_EMOJI_COLLECTION twemoji_32)
+    list(APPEND SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/boards/wali/wali.cc")
+    list(APPEND INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/boards/wali")
+
+
 elseif(CONFIG_BOARD_TYPE_LINGKONG_S3_MOC_CAM_1_54TFT)
     set(BOARD_TYPE "lingkong-s3-moc-cam-1.54tft")
     set(BUILTIN_TEXT_FONT font_puhui_basic_20_4)
@@ -237,8 +247,10 @@ elseif(CONFIG_BOARD_TYPE_LINGKONG_S3_MOC_CAM_1_54TFT)
     set(BOARD_EXTRA_SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/boards/lingkong-s3-moc-cam-1.54tft/motor_control.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/boards/lingkong-s3-moc-cam-1.54tft/servo_control.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/boards/lingkong-s3-moc-cam-1.54tft/selftest_items.cc"
     )
     list(APPEND SOURCES ${BOARD_EXTRA_SOURCES})
+    list(APPEND INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/boards/${BOARD_TYPE}")
 
 
   elseif(CONFIG_BOARD_TYPE_MOSS_550W)
@@ -250,7 +262,7 @@ elseif(CONFIG_BOARD_TYPE_LINGKONG_S3_MOC_CAM_1_54TFT)
     # 如果有额外的源文件（电机控制等），在这里添加
     set(BOARD_EXTRA_SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/boards/moss_550w/motor_control.c"
-
+        "${CMAKE_CURRENT_SOURCE_DIR}/boards/moss_550w/selftest_items.c"
     )
     list(APPEND SOURCES ${BOARD_EXTRA_SOURCES})
 
@@ -342,6 +354,19 @@ elseif(CONFIG_BOARD_TYPE_WAVESHARE_S3_TOUCH_AMOLED_1_32)
     set(BUILTIN_TEXT_FONT font_puhui_basic_20_4)
     set(BUILTIN_ICON_FONT font_awesome_20_4)
     set(DEFAULT_EMOJI_COLLECTION twemoji_32)
+elseif(CONFIG_BOARD_TYPE_DOLY)
+    set(BOARD_TYPE "doly")
+    # 240x240 圆屏：14 号字太小，用 30 号（同其它 P4 大屏板）
+    set(BUILTIN_TEXT_FONT font_puhui_basic_30_4)
+    set(BUILTIN_ICON_FONT font_awesome_30_4)
+    set(DEFAULT_EMOJI_COLLECTION twemoji_64)
+    set(BOARD_EXTRA_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/boards/doly/doly.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/boards/doly/doly_audio_codec.cc"
+    )
+    list(APPEND SOURCES ${BOARD_EXTRA_SOURCES})
+    list(APPEND INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/boards/doly")
+
 elseif(CONFIG_BOARD_TYPE_WAVESHARE_P4_NANO)
     set(BOARD_TYPE "waveshare-p4-nano")
     set(BUILTIN_TEXT_FONT font_puhui_basic_30_4)

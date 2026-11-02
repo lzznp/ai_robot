@@ -40,6 +40,11 @@ void motor_stop(uint8_t motor_id);
 // 电机步进指定步数 (阻塞)
 void motor_step(uint8_t motor_id, uint8_t direction, uint16_t steps);
 
+// 走完固定步数后是否保持力矩（2026-11-01 新增）
+//   hold = 1 → 不释放相位，保持力矩（悬挂机构怕重力下垂时用；会持续发热）
+//   hold = 0 → 释放相位断电（缺省行为）
+void motor_set_hold(uint8_t motor_id, uint8_t hold);
+
 // 释放电机 (所有相断电)
 void motor_release(uint8_t motor_id);
 

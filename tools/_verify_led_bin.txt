@@ -1,0 +1,15 @@
+bin=xiaozhi.bin
+size=2243520 bytes
+
+自检横幅 SELF-TEST MODE（应为 0）      SELF-TEST MODE                     命中 0   OK
+自检横幅 不启动 WiFi（应为 0）            不启动 WiFi / Application             命中 0   OK
+ws2812 新动作日志（应 >0）             [WS2812] pin=%d count=%d rgb=      命中 1   OK
+ws2812 建带日志（应 >0）              [WS2812] 新建灯带                      命中 1   OK
+ws2812 关灯日志（死代码已删，应 0）         [WS2812] pin=%d 关灯                 命中 0   OK
+ws2812 创建失败日志（应 >0）            [WS2812] 创建失败                      命中 1   OK
+command 通道（应 >0）               [Command] 收到新指令                    命中 1   OK
+gpio 动作日志（应 >0）                (hold %d ms)                       命中 1   OK
+pwm 动作日志（应 >0）                 pulse_us                           命中 1   OK
+code_stream（应 >0）              CodeInterpreter                    命中 1   OK
+
+总结: 全部符合预期

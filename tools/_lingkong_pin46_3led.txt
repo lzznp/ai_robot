@@ -1,0 +1,121 @@
+t=  0.0s  RED   rgb=(64, 0, 0) ok=True
+t=  7.0s  GREEN rgb=(0, 64, 0) ok=True
+t= 14.0s  BLUE  rgb=(0, 0, 64) ok=True
+t= 21.0s  WHITE rgb=(64, 64, 64) ok=True
+
+===== SERIAL =====
+I (248853) Application: 📩 OnIncomingJson: {"type":"command","payload":{"actions":[{"type":"ws2812","pin":46,"count":3,"rgb":[64,0,0],"duration":6000}]}}
+I (248853) Application: 🎬 [Command] 收到新指令
+I (248863) Application: 📦 Payload: {"actions":[{"type":"ws2812","pin":46,"count":3,"rgb":[64,0,0],"duration":6000}]}
+I (248873) Application: 🎬 [Command] 收到 1 个动作
+I (248873) Application:   [0] Action: ws2812
+I (248883) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (248883) Application: 📋 [TaskQueue] 尝试获取锁...
+I (248893) Application: 📋 [TaskQueue] 锁已获取
+I (248893) Application: 📋 [TaskQueue] 取出任务: ws2812, 剩余: 0
+I (248903) Application: 📋 [TaskQueue] 锁已释放
+I (248903) Application: ⚡ [Task] 执行: ws2812
+I (248913) Application: [WS2812] 新建灯带 pin=46 count=3
+I (248913) Application: [WS2812] pin=46 count=3 rgb=(64,0,0)
+I (248923) Application: ⏰ [Delay] 延时 6000 ms 后继续
+I (249573) SystemInfo: free sram: 137959 minimal sram: 134783
+I (254923) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (254923) Application: 📋 [TaskQueue] 尝试获取锁...
+I (254923) Application: 📋 [TaskQueue] 锁已获取
+I (254933) Application: 📋 [TaskQueue] 取出任务: ws2812, 剩余: 0
+I (254933) Application: 📋 [TaskQueue] 锁已释放
+I (254943) Application: ⚡ [Task] 执行: ws2812
+I (254943) Application: [WS2812] pin=46 count=3 rgb=(0,0,0)
+I (254953) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (254953) Application: 📋 [TaskQueue] 尝试获取锁...
+I (254963) Application: 📋 [TaskQueue] 锁已获取
+I (254963) Application: 📋 [TaskQueue] 队列为空，停止
+I (255853) Application: 📩 OnIncomingJson: {"type":"command","payload":{"actions":[{"type":"ws2812","pin":46,"count":3,"rgb":[0,64,0],"duration":6000}]}}
+I (255853) Application: 🎬 [Command] 收到新指令
+I (255863) Application: 📦 Payload: {"actions":[{"type":"ws2812","pin":46,"count":3,"rgb":[0,64,0],"duration":6000}]}
+I (255873) Application: 🎬 [Command] 收到 1 个动作
+I (255883) Application:   [0] Action: ws2812
+I (255883) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (255883) Application: 📋 [TaskQueue] 尝试获取锁...
+I (255893) Application: 📋 [TaskQueue] 锁已获取
+I (255893) Application: 📋 [TaskQueue] 取出任务: ws2812, 剩余: 0
+I (255903) Application: 📋 [TaskQueue] 锁已释放
+I (255913) Application: ⚡ [Task] 执行: ws2812
+I (255913) Application: [WS2812] pin=46 count=3 rgb=(0,64,0)
+I (255923) Application: ⏰ [Delay] 延时 6000 ms 后继续
+I (259573) SystemInfo: free sram: 137959 minimal sram: 134783
+I (261923) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (261923) Application: 📋 [TaskQueue] 尝试获取锁...
+I (261923) Application: 📋 [TaskQueue] 锁已获取
+I (261933) Application: 📋 [TaskQueue] 取出任务: ws2812, 剩余: 0
+I (261933) Application: 📋 [TaskQueue] 锁已释放
+I (261943) Application: ⚡ [Task] 执行: ws2812
+I (261943) Application: [WS2812] pin=46 count=3 rgb=(0,0,0)
+I (261953) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (261953) Application: 📋 [TaskQueue] 尝试获取锁...
+I (261963) Application: 📋 [TaskQueue] 锁已获取
+I (261963) Application: 📋 [TaskQueue] 队列为空，停止
+I (262863) Application: 📩 OnIncomingJson: {"type":"command","payload":{"actions":[{"type":"ws2812","pin":46,"count":3,"rgb":[0,0,64],"duration":6000}]}}
+I (262863) Application: 🎬 [Command] 收到新指令
+I (262863) Application: 📦 Payload: {"actions":[{"type":"ws2812","pin":46,"count":3,"rgb":[0,0,64],"duration":6000}]}
+I (262873) Application: 🎬 [Command] 收到 1 个动作
+I (262883) Application:   [0] Action: ws2812
+I (262883) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (262893) Application: 📋 [TaskQueue] 尝试获取锁...
+I (262893) Application: 📋 [TaskQueue] 锁已获取
+I (262903) Application: 📋 [TaskQueue] 取出任务: ws2812, 剩余: 0
+I (262903) Application: 📋 [TaskQueue] 锁已释放
+I (262913) Application: ⚡ [Task] 执行: ws2812
+I (262913) Application: [WS2812] pin=46 count=3 rgb=(0,0,64)
+I (262923) Application: ⏰ [Delay] 延时 6000 ms 后继续
+I (268923) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (268923) Application: 📋 [TaskQueue] 尝试获取锁...
+I (268933) Application: 📋 [TaskQueue] 锁已获取
+I (268933) Application: 📋 [TaskQueue] 取出任务: ws2812, 剩余: 0
+I (268943) Application: 📋 [TaskQueue] 锁已释放
+I (268943) Application: ⚡ [Task] 执行: ws2812
+I (268953) Application: [WS2812] pin=46 count=3 rgb=(0,0,0)
+I (268953) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (268963) Application: 📋 [TaskQueue] 尝试获取锁...
+I (268963) Application: 📋 [TaskQueue] 锁已获取
+I (268973) Application: 📋 [TaskQueue] 队列为空，停止
+I (269573) SystemInfo: free sram: 137959 minimal sram: 134783
+I (269863) Application: 📩 OnIncomingJson: {"type":"command","payload":{"actions":[{"type":"ws2812","pin":46,"count":3,"rgb":[64,64,64],"duration":6000}]}}
+I (269863) Application: 🎬 [Command] 收到新指令
+I (269873) Application: 📦 Payload: {"actions":[{"type":"ws2812","pin":46,"count":3,"rgb":[64,64,64],"duration":6000}]}
+I (269883) Application: 🎬 [Command] 收到 1 个动作
+I (269893) Application:   [0] Action: ws2812
+I (269893) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (269893) Application: 📋 [TaskQueue] 尝试获取锁...
+I (269903) Application: 📋 [TaskQueue] 锁已获取
+I (269903) Application: 📋 [TaskQueue] 取出任务: ws2812, 剩余: 0
+I (269913) Application: 📋 [TaskQueue] 锁已释放
+I (269923) Application: ⚡ [Task] 执行: ws2812
+I (269923) Application: [WS2812] pin=46 count=3 rgb=(64,64,64)
+I (269933) Application: ⏰ [Delay] 延时 6000 ms 后继续
+I (275933) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (275933) Application: 📋 [TaskQueue] 尝试获取锁...
+I (275933) Application: 📋 [TaskQueue] 锁已获取
+I (275943) Application: 📋 [TaskQueue] 取出任务: ws2812, 剩余: 0
+I (275943) Application: 📋 [TaskQueue] 锁已释放
+I (275953) Application: ⚡ [Task] 执行: ws2812
+I (275953) Application: [WS2812] pin=46 count=3 rgb=(0,0,0)
+I (275963) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (275963) Application: 📋 [TaskQueue] 尝试获取锁...
+I (275973) Application: 📋 [TaskQueue] 锁已获取
+I (275973) Application: 📋 [TaskQueue] 队列为空，停止
+I (276863) Application: 📩 OnIncomingJson: {"type":"command","payload":{"actions":[{"type":"ws2812","pin":46,"count":3,"rgb":[0,0,0]}]}}
+I (276863) Application: 🎬 [Command] 收到新指令
+I (276873) Application: 📦 Payload: {"actions":[{"type":"ws2812","pin":46,"count":3,"rgb":[0,0,0]}]}
+I (276883) Application: 🎬 [Command] 收到 1 个动作
+I (276883) Application:   [0] Action: ws2812
+I (276893) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (276893) Application: 📋 [TaskQueue] 尝试获取锁...
+I (276903) Application: 📋 [TaskQueue] 锁已获取
+I (276903) Application: 📋 [TaskQueue] 取出任务: ws2812, 剩余: 0
+I (276913) Application: 📋 [TaskQueue] 锁已释放
+I (276913) Application: ⚡ [Task] 执行: ws2812
+I (276923) Application: [WS2812] pin=46 count=3 rgb=(0,0,0)
+I (276923) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (276933) Application: 📋 [TaskQueue] 尝试获取锁...
+I (276933) Application: 📋 [TaskQueue] 锁已获取

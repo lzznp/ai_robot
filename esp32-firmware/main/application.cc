@@ -14,6 +14,8 @@
 #include <esp_log.h>
 #include <cJSON.h>
 #include <driver/gpio.h>
+#include <driver/ledc.h>
+#include <led_strip.h>
 #include <arpa/inet.h>
 #include <font_awesome.h>
 
@@ -1014,6 +1016,258 @@ void Application::PlaySound(const std::string_view& sound) {
 }
 
 // ============================================================
+// ★ 引脚级执行器（芯片级通用能力，与板子无关）
+//
+// 设计约定：固件**不认识**"前进 / 挥手 / 亮灯"这些词。
+// 它只认识两件硬件事实：
+//    gpio  某脚输出什么电平，保持多少毫秒
+//    pwm   某脚输出什么频率 / 脉宽（或占空比），保持多少毫秒
+// 语义（"前进"= 17 高 18 低 26 高 27 低，1.2 秒）由**后台能力库**定义成一串指令流，
+// 换个板子只要换能力库里的引脚流，固件一行不用改。
+// ============================================================
+namespace {
+
+constexpr uint32_t kLedcSrcClkHz = 80000000u;   // LEDC 取 APB 时钟
+
+bool s_gpio_ready[64] = {false};                // 每根脚只配一次输出
+
+// 把引脚配成输出（幂等）
+bool EnsureOutput(int pin) {
+    if (pin < 0 || pin >= 64) {
+        return false;
+    }
+    if (s_gpio_ready[pin]) {
+        return true;
+    }
+    gpio_config_t io = {};
+    io.pin_bit_mask = (1ULL << pin);
+    io.mode = GPIO_MODE_OUTPUT;
+    io.pull_up_en = GPIO_PULLUP_DISABLE;
+    io.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io.intr_type = GPIO_INTR_DISABLE;
+    if (gpio_config(&io) != ESP_OK) {
+        return false;
+    }
+    s_gpio_ready[pin] = true;
+    return true;
+}
+
+// 分辨率 = log2(源时钟 / 频率)，上限 14 位、下限 8 位
+int BitsForFreq(uint32_t freq) {
+    if (freq == 0) {
+        freq = 50;
+    }
+    uint32_t div = kLedcSrcClkHz / freq;
+    int bits = 0;
+    while (div > 1 && bits < 14) {
+        div >>= 1;
+        bits++;
+    }
+    return bits < 8 ? 8 : bits;
+}
+
+struct PwmPinEntry {
+    int pin = -1;
+    ledc_channel_t ch = LEDC_CHANNEL_0;
+};
+
+struct PwmTimerEntry {
+    uint32_t freq = 0;
+    ledc_timer_t timer = LEDC_TIMER_0;
+    bool used = false;
+};
+
+constexpr int kMaxPwmPins = LEDC_CHANNEL_MAX;
+PwmPinEntry s_pwm_pins[kMaxPwmPins];
+PwmTimerEntry s_pwm_timers[LEDC_TIMER_MAX];
+
+// 应用一路 PWM：脉宽模式（舵机）或占空比模式（调速）
+bool ApplyPinPwm(int pin, uint32_t freq, int pulse_us, int duty_pct, bool use_duty) {
+    if (pin < 0 || pin >= 64) {
+        return false;
+    }
+    if (freq == 0) {
+        freq = 50;
+    }
+
+    // 1) 找/分配该引脚的信道
+    int idx = -1;
+    for (int i = 0; i < kMaxPwmPins; i++) {
+        if (s_pwm_pins[i].pin == pin) {
+            idx = i;
+            break;
+        }
+    }
+    if (idx < 0) {
+        for (int i = 0; i < kMaxPwmPins; i++) {
+            if (s_pwm_pins[i].pin < 0) {
+                idx = i;
+                s_pwm_pins[i].pin = pin;
+                s_pwm_pins[i].ch = (ledc_channel_t)i;
+                break;
+            }
+        }
+    }
+    if (idx < 0) {
+        ESP_LOGW(TAG, "[PWM] 信道已满，引脚 %d 申请失败", pin);
+        return false;
+    }
+
+    // 2) 找/分配一个能出这个频率的定时器
+    ledc_timer_t timer = LEDC_TIMER_MAX;
+    for (int i = 0; i < LEDC_TIMER_MAX; i++) {
+        if (s_pwm_timers[i].used && s_pwm_timers[i].freq == freq) {
+            timer = s_pwm_timers[i].timer;
+            break;
+        }
+    }
+    if (timer == LEDC_TIMER_MAX) {
+        for (int i = 0; i < LEDC_TIMER_MAX; i++) {
+            if (!s_pwm_timers[i].used) {
+                s_pwm_timers[i].used = true;
+                s_pwm_timers[i].freq = freq;
+                s_pwm_timers[i].timer = (ledc_timer_t)i;
+                timer = (ledc_timer_t)i;
+                break;
+            }
+        }
+    }
+    if (timer == LEDC_TIMER_MAX) {
+        ESP_LOGW(TAG, "[PWM] 定时器已满，频率 %u 申请失败", (unsigned)freq);
+        return false;
+    }
+
+    int bits = BitsForFreq(freq);
+    ledc_timer_config_t tcfg = {};
+    tcfg.speed_mode = LEDC_LOW_SPEED_MODE;
+    tcfg.duty_resolution = (ledc_timer_bit_t)bits;
+    tcfg.timer_num = timer;
+    tcfg.freq_hz = freq;
+    tcfg.clk_cfg = LEDC_AUTO_CLK;
+    if (ledc_timer_config(&tcfg) != ESP_OK) {
+        ESP_LOGW(TAG, "[PWM] 定时器配置失败 pin=%d freq=%u", pin, (unsigned)freq);
+        return false;
+    }
+
+    uint32_t max_duty = (1u << bits) - 1u;
+    uint32_t duty;
+    if (use_duty) {
+        duty = (uint32_t)((uint64_t)max_duty * (uint32_t)(duty_pct < 0 ? 0 : duty_pct) / 100u);
+    } else {
+        // 脉宽 -> 计数：ticks = pulse_us * freq * (max+1) / 1e6
+        duty = (uint32_t)((uint64_t)(pulse_us < 0 ? 0 : pulse_us) * freq * (max_duty + 1u) / 1000000ull);
+    }
+    if (duty > max_duty) {
+        duty = max_duty;
+    }
+
+    ledc_channel_config_t ccfg = {};
+    ccfg.gpio_num = pin;
+    ccfg.speed_mode = LEDC_LOW_SPEED_MODE;
+    ccfg.channel = s_pwm_pins[idx].ch;
+    ccfg.intr_type = LEDC_INTR_DISABLE;
+    ccfg.timer_sel = timer;
+    ccfg.duty = duty;
+    ccfg.hpoint = 0;
+    if (ledc_channel_config(&ccfg) != ESP_OK) {
+        ESP_LOGW(TAG, "[PWM] 信道配置失败 pin=%d", pin);
+        return false;
+    }
+    ESP_LOGI(TAG, "[PWM] pin=%d freq=%u %s=%d bits=%d duty=%u", pin, (unsigned)freq,
+             use_duty ? "duty%" : "pulse_us", use_duty ? duty_pct : pulse_us, bits,
+             (unsigned)duty);
+    return true;
+}
+
+// 关掉该引脚的 PWM 输出（占空比归零）
+void StopPinPwm(int pin) {
+    for (int i = 0; i < kMaxPwmPins; i++) {
+        if (s_pwm_pins[i].pin == pin) {
+            ledc_set_duty(LEDC_LOW_SPEED_MODE, s_pwm_pins[i].ch, 0);
+            ledc_update_duty(LEDC_LOW_SPEED_MODE, s_pwm_pins[i].ch);
+            ESP_LOGI(TAG, "[PWM] pin=%d 停止输出", pin);
+            return;
+        }
+    }
+}
+
+// ============================================================
+// 芯片级 WS2812 灯带（RMT 输出，与上面 LEDC 的 PWM 通道互不冲突）
+//
+// 为什么单独做：WS2812/WS2812B 认的不是电平，是 800kHz 的 GRB 数据流。
+// 用 gpio 打高电平对它毫无意义（试过就懂：灯纹丝不动）。
+// 每条灯带按 (pin, count) 缓存一个 RMT 句柄，重复点亮不重复建。
+// ============================================================
+constexpr int kMaxWsStrips = 4;
+
+struct WsStripEntry {
+    int pin = -1;
+    int count = 0;
+    led_strip_handle_t handle = nullptr;
+};
+
+WsStripEntry s_ws_strips[kMaxWsStrips];
+
+led_strip_handle_t EnsureStrip(int pin, int count) {
+    if (pin < 0 || pin >= 64 || count <= 0 || count > 2048) {
+        return nullptr;
+    }
+    for (int i = 0; i < kMaxWsStrips; i++) {
+        if (s_ws_strips[i].handle != nullptr && s_ws_strips[i].pin == pin &&
+            s_ws_strips[i].count == count) {
+            return s_ws_strips[i].handle;
+        }
+    }
+    led_strip_config_t cfg = {};
+    cfg.strip_gpio_num = pin;
+    cfg.max_leds = count;
+    cfg.color_component_format = LED_STRIP_COLOR_COMPONENT_FMT_GRB;
+    cfg.led_model = LED_MODEL_WS2812;
+
+    led_strip_rmt_config_t rmt = {};
+    rmt.resolution_hz = 10 * 1000 * 1000;   // 10MHz，和 SingleLed 一致
+
+    led_strip_handle_t handle = nullptr;
+    esp_err_t err = led_strip_new_rmt_device(&cfg, &rmt, &handle);
+    if (err != ESP_OK || handle == nullptr) {
+        ESP_LOGW(TAG, "[WS2812] 创建失败 pin=%d count=%d err=%s", pin, count,
+                 esp_err_to_name(err));
+        return nullptr;
+    }
+    for (int i = 0; i < kMaxWsStrips; i++) {
+        if (s_ws_strips[i].handle == nullptr) {
+            s_ws_strips[i].pin = pin;
+            s_ws_strips[i].count = count;
+            s_ws_strips[i].handle = handle;
+            ESP_LOGI(TAG, "[WS2812] 新建灯带 pin=%d count=%d", pin, count);
+            return handle;
+        }
+    }
+    ESP_LOGW(TAG, "[WS2812] 灯带槽位已满(=%d)", kMaxWsStrips);
+    led_strip_del(handle);
+    return nullptr;
+}
+
+// 点亮：所有灯珠同一个颜色（r/g/b 各 0~255）
+bool ApplyWs2812(int pin, int count, int r, int g, int b) {
+    led_strip_handle_t handle = EnsureStrip(pin, count);
+    if (handle == nullptr) {
+        return false;
+    }
+    for (int i = 0; i < count; i++) {
+        led_strip_set_pixel(handle, i, r, g, b);
+    }
+    if (led_strip_refresh(handle) != ESP_OK) {
+        ESP_LOGW(TAG, "[WS2812] refresh 失败 pin=%d", pin);
+        return false;
+    }
+    ESP_LOGI(TAG, "[WS2812] pin=%d count=%d rgb=(%d,%d,%d)", pin, count, r, g, b);
+    return true;
+}
+
+}  // namespace
+
+// ============================================================
 // ★ 新增：Command 指令执行器实现
 // ============================================================
 
@@ -1063,13 +1317,42 @@ void Application::ExecuteCommand(cJSON* payload) {
                     AppendTask(item);
                 }
             }
-            // --- GPIO 控制 ---
+            // --- GPIO 控制（引脚级；可带保持时长，到点回低）---
             else if (action_type == "gpio") {
                 auto pin = cJSON_GetObjectItem(action, "pin");
                 auto level = cJSON_GetObjectItem(action, "level");
                 if (cJSON_IsNumber(pin) && cJSON_IsNumber(level)) {
                     item.gpio_pin = pin->valueint;
                     item.gpio_level = level->valueint;
+                    auto dur = cJSON_GetObjectItem(action, "duration");
+                    if (cJSON_IsNumber(dur)) {
+                        item.duration_ms = dur->valueint;
+                    }
+                    AppendTask(item);
+                }
+            }
+            // --- 引脚级 PWM（舵机用 pulse_us，调速用 duty）---
+            else if (action_type == "pwm") {
+                auto pin = cJSON_GetObjectItem(action, "pin");
+                if (cJSON_IsNumber(pin)) {
+                    item.pwm_pin = pin->valueint;
+                    auto freq = cJSON_GetObjectItem(action, "freq");
+                    if (cJSON_IsNumber(freq)) {
+                        item.pwm_freq_hz = freq->valueint;
+                    }
+                    auto pulse = cJSON_GetObjectItem(action, "pulse_us");
+                    auto duty = cJSON_GetObjectItem(action, "duty");
+                    if (cJSON_IsNumber(pulse)) {
+                        item.pwm_use_duty = false;
+                        item.pwm_pulse_us = pulse->valueint;
+                    } else if (cJSON_IsNumber(duty)) {
+                        item.pwm_use_duty = true;
+                        item.pwm_duty_pct = duty->valueint;
+                    }
+                    auto dur = cJSON_GetObjectItem(action, "duration");
+                    if (cJSON_IsNumber(dur)) {
+                        item.duration_ms = dur->valueint;
+                    }
                     AppendTask(item);
                 }
             }
@@ -1091,6 +1374,67 @@ void Application::ExecuteCommand(cJSON* payload) {
                         item.duration_ms = duration->valueint;
                     }
                     AppendTask(item);
+                }
+            }
+            // --- 芯片级 WS2812 灯带（3 针 5V 灯带：G/V/S，S 接数据脚）---
+            else if (action_type == "ws2812") {
+                auto pin = cJSON_GetObjectItem(action, "pin");
+                if (cJSON_IsNumber(pin)) {
+                    item.ws_pin = pin->valueint;
+                    auto count = cJSON_GetObjectItem(action, "count");
+                    item.ws_count = cJSON_IsNumber(count) ? count->valueint : 1;
+
+                    /* 颜色两种写法都收：
+                     *   "rgb": [r, g, b]                 （推荐，一眼能看出是三色）
+                     *   "r"/"g"/"b": 数值               （单色更省事）
+                     * 全不给 = 关灯（rgb 全 0）。 */
+                    auto rgb = cJSON_GetObjectItem(action, "rgb");
+                    if (cJSON_IsArray(rgb) && cJSON_GetArraySize(rgb) >= 3) {
+                        item.ws_r = cJSON_GetArrayItem(rgb, 0)->valueint;
+                        item.ws_g = cJSON_GetArrayItem(rgb, 1)->valueint;
+                        item.ws_b = cJSON_GetArrayItem(rgb, 2)->valueint;
+                    } else {
+                        auto r = cJSON_GetObjectItem(action, "r");
+                        auto g = cJSON_GetObjectItem(action, "g");
+                        auto b = cJSON_GetObjectItem(action, "b");
+                        if (cJSON_IsNumber(r)) item.ws_r = r->valueint;
+                        if (cJSON_IsNumber(g)) item.ws_g = g->valueint;
+                        if (cJSON_IsNumber(b)) item.ws_b = b->valueint;
+                    }
+
+                    auto dur = cJSON_GetObjectItem(action, "duration");
+                    if (cJSON_IsNumber(dur)) {
+                        item.duration_ms = dur->valueint;
+                    }
+                    AppendTask(item);
+                }
+            }
+            // --- 摄像头（芯片级触发：抓一帧 / 抓帧并上传视觉接口）---
+            else if (action_type == "camera") {
+                auto op = cJSON_GetObjectItem(action, "op");
+                item.cam_op = cJSON_IsString(op) ? op->valuestring : "capture";
+                AppendTask(item);
+            }
+            // --- 步进电机（芯片级：走 N 步；不是"左转/抬头"这种语义）---
+            else if (action_type == "stepper") {
+                auto motor = cJSON_GetObjectItem(action, "motor");
+                auto steps = cJSON_GetObjectItem(action, "steps");
+                if (cJSON_IsNumber(motor) && cJSON_IsNumber(steps)) {
+                    item.st_motor = motor->valueint;
+                    item.st_steps = steps->valueint;
+                    auto sp = cJSON_GetObjectItem(action, "speed");
+                    if (cJSON_IsNumber(sp)) {
+                        item.st_speed_hz = sp->valueint;
+                    }
+                    /* release: true（缺省）= 走完断电松劲（现有行为）
+                     *          false    = 保持力矩（悬挂机构怕重力下垂时用） */
+                    auto rel = cJSON_GetObjectItem(action, "release");
+                    if (cJSON_IsBool(rel)) {
+                        item.st_hold = !cJSON_IsTrue(rel);
+                    }
+                    AppendTask(item);
+                } else {
+                    ESP_LOGW(TAG, "  [%d] stepper 缺少 motor/steps", i);
                 }
             }
             // --- 延时 ---
@@ -1187,10 +1531,47 @@ void Application::ExecuteTask(const TaskItem& task) {
 
     } else if (task.type == "gpio") {
         if (task.gpio_pin >= 0) {
+            if (!EnsureOutput(task.gpio_pin)) {
+                ESP_LOGW(TAG, "  GPIO %d 配置为输出失败", task.gpio_pin);
+            }
             gpio_set_level((gpio_num_t)task.gpio_pin, task.gpio_level);
-            ESP_LOGI(TAG, "  GPIO %d -> %d", task.gpio_pin, task.gpio_level);
+            ESP_LOGI(TAG, "  GPIO %d -> %d (hold %d ms)", task.gpio_pin, task.gpio_level,
+                     task.duration_ms);
+            if (task.duration_ms > 0) {
+                /* 到点回落到低电平（"高电平 N 秒"就是这个语义）。
+                 * 用现成的延时通道推进队列，和 move 的收尾方式一致。 */
+                TaskItem revert;
+                revert.type = "gpio";
+                revert.gpio_pin = task.gpio_pin;
+                revert.gpio_level = 0;
+                revert.duration_ms = 0;
+                AppendTask(revert);
+                ProcessNextTaskAfterDelay(task.duration_ms);
+                return;
+            }
         }
         // GPIO 立即完成，继续下一个
+        ProcessNextTask();
+
+    } else if (task.type == "pwm") {
+        if (task.pwm_pin >= 0) {
+            ApplyPinPwm(task.pwm_pin, (uint32_t)task.pwm_freq_hz, task.pwm_pulse_us,
+                        task.pwm_duty_pct, task.pwm_use_duty);
+            if (task.duration_ms > 0) {
+                /* 到点收手：同一个引脚再来一条空 PWM（占空比 0）。
+                 * 舵机脉冲消失即松劲，电机占空比归零即停。 */
+                TaskItem stop;
+                stop.type = "pwm";
+                stop.pwm_pin = task.pwm_pin;
+                stop.pwm_freq_hz = task.pwm_freq_hz;
+                stop.pwm_use_duty = true;
+                stop.pwm_duty_pct = 0;
+                stop.duration_ms = 0;
+                AppendTask(stop);
+                ProcessNextTaskAfterDelay(task.duration_ms);
+                return;
+            }
+        }
         ProcessNextTask();
 
     } else if (task.type == "servo") {
@@ -1223,6 +1604,79 @@ void Application::ExecuteTask(const TaskItem& task) {
             ProcessNextTaskAfterDelay(task.duration_ms);
         } else {
             ProcessNextTask();
+        }
+
+    } else if (task.type == "camera") {
+        auto camera = board.GetCamera();
+        if (camera == nullptr) {
+            ESP_LOGW(TAG, "  [CAMERA] 这块板没有摄像头");
+        } else {
+            ESP_LOGI(TAG, "  [CAMERA] 抓帧开始 (op=%s)", task.cam_op.c_str());
+            if (!camera->Capture()) {
+                ESP_LOGE(TAG, "  [CAMERA] 抓帧失败");
+            } else {
+                ESP_LOGI(TAG, "  [CAMERA] 抓帧成功");
+                if (task.cam_op == "explain") {
+                    // Explain 需要后台下发过 vision url（MCP initialize 里给的）
+                    try {
+                        std::string result = camera->Explain("请描述这张图片");
+                        ESP_LOGI(TAG, "  [CAMERA] explain 返回: %s", result.c_str());
+                    } catch (const std::exception& e) {
+                        ESP_LOGW(TAG, "  [CAMERA] explain 失败: %s", e.what());
+                    }
+                }
+            }
+        }
+        ProcessNextTask();
+
+    } else if (task.type == "ws2812") {
+        if (task.ws_pin >= 0) {
+            ApplyWs2812(task.ws_pin, task.ws_count, task.ws_r, task.ws_g, task.ws_b);
+            if (task.duration_ms > 0) {
+                /* 到点关灯：队列尾部追加一条"清零"任务，和 gpio 的收尾方式一致 */
+                TaskItem off;
+                off.type = "ws2812";
+                off.ws_pin = task.ws_pin;
+                off.ws_count = task.ws_count;
+                off.ws_r = 0;
+                off.ws_g = 0;
+                off.ws_b = 0;
+                off.duration_ms = 0;
+                AppendTask(off);
+                ProcessNextTaskAfterDelay(task.duration_ms);
+                return;
+            }
+        }
+        ProcessNextTask();
+
+    } else if (task.type == "stepper") {
+        /* 步进电机：交给板级驱动（非阻塞），然后按估算的走完时间恢复队列。
+         *
+         * 为什么用"估算时间 + 延时"而不是在这里轮询 motor_is_running()：
+         * 这里跑在主事件循环里，阻塞 2 秒会把音频收发和状态机一起卡住
+         * （台账 2026-10-19 踩过：忙等导致调用者日志延后、音频卡顿）。
+         * 估算 = steps / speed_hz 秒，多给 120ms 余量。
+         */
+        int steps = task.st_steps;
+        if (task.st_motor < 0 || task.st_motor > 1 || steps == 0) {
+            ESP_LOGW(TAG, "  [STEPPER] 参数无效 motor=%d steps=%d", task.st_motor, steps);
+            ProcessNextTask();
+        } else {
+            if (steps > 1024) steps = 1024;
+            if (steps < -1024) steps = -1024;
+
+            int speed = task.st_speed_hz > 0 ? task.st_speed_hz : 60;
+            if (speed > 400) speed = 400;      // 太快会丢步
+
+            ESP_LOGI(TAG, "  [STEPPER] motor=%d steps=%d(%s) speed=%d release=%d",
+                     task.st_motor, steps, steps > 0 ? "CW" : "CCW", speed,
+                     task.st_hold ? 0 : 1);
+
+            board.StepMotor(task.st_motor, steps, speed, task.st_hold);
+
+            int abs_steps = steps > 0 ? steps : -steps;
+            int est_ms = (int)((int64_t)abs_steps * 1000 / speed) + 120;
+            ProcessNextTaskAfterDelay(est_ms);
         }
 
     } else if (task.type == "delay") {

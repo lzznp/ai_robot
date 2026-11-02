@@ -17,7 +17,7 @@ class DeviceRepo:
         """获取所有设备"""
         with get_db_cursor() as cursor:
             cursor.execute("""
-                SELECT id, alias, device_type, ip, online, last_seen, created_at
+                SELECT id, alias, device_type, ip, online, last_seen, created_at, hw_json
                 FROM devices
                 ORDER BY alias
             """)
@@ -28,12 +28,40 @@ class DeviceRepo:
         """根据ID获取设备"""
         with get_db_cursor() as cursor:
             cursor.execute("""
-                SELECT id, alias, device_type, ip, online, last_seen, created_at
+                SELECT id, alias, device_type, ip, online, last_seen, created_at, hw_json
                 FROM devices
                 WHERE id = ?
             """, (device_id,))
             row = cursor.fetchone()
             return dict(row) if row else None
+
+    # ---------- 本机实物备注 / 覆盖（2026-11-01）----------
+    @staticmethod
+    def get_hw(device_id: str) -> Dict[str, Any]:
+        """取这台设备的本机备注与覆盖，形如：
+            {"lamp_pins": [7], "notes": ["灯组1 目前只接了 1 颗"]}
+        没有就返回 {}。绝不编默认值 —— 空 = 没记。
+        """
+        with get_db_cursor() as cursor:
+            cursor.execute("SELECT hw_json FROM devices WHERE id = ?", (device_id,))
+            row = cursor.fetchone()
+        if not row or not row[0]:
+            return {}
+        try:
+            data = json.loads(row[0])
+            return data if isinstance(data, dict) else {}
+        except (json.JSONDecodeError, TypeError):
+            return {}
+
+    @staticmethod
+    def set_hw(device_id: str, hw: Dict[str, Any]) -> bool:
+        """保存本机备注与覆盖。传空 dict 等于清空。"""
+        with get_db_cursor() as cursor:
+            cursor.execute(
+                "UPDATE devices SET hw_json = ? WHERE id = ?",
+                (json.dumps(hw, ensure_ascii=False) if hw else None, device_id),
+            )
+            return cursor.rowcount > 0
 
     @staticmethod
     def get_online() -> List[Dict[str, Any]]:

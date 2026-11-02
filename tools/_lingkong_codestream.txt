@@ -1,0 +1,13 @@
+=== code_stream 解释器对号（app 0x20000 +0x3f0000）===
+CodeInterpreter TAG    CodeInterpreter                  命中 1
+gpio_write 日志          GPIO %d -> %d for %d ms          命中 1
+pwm_write 日志           PWM %d -> %d for %d ms           命中 1
+Unknown op 日志          Unknown op: %s                   命中 1
+steps 非数组日志            steps is not an array            命中 1
+Executing N steps      Executing %d steps               命中 1
+别名字段 op                op                               命中 411
+op: gpio_write         gpio_write                       命中 2
+op: pwm_write          pwm_write                        命中 1
+gpio_config 被调用        gpio_config                      命中 2
+gpio_set_level 存在      gpio_set_level                   命中 1
+gpio_set_direction     gpio_set_direction               命中 2

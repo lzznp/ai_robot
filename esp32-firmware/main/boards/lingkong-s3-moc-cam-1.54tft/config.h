@@ -3,6 +3,15 @@
 
 #include <driver/gpio.h>
 
+// ============================================================
+// ★ 自检模式开关（2026-10-22 新增，和 MOSS 用同一套引擎）
+//   1 = 上电后不启动 WiFi/Application/屏/摄像头，直接进元件自检
+//       交互：BOOT 键单击换项、长按执行；结果只看串口
+//   0 = 正常固件
+//   项表在 boards/lingkong-s3-moc-cam-1.54tft/selftest_items.cc
+// ============================================================
+#define LINGKONG_SELFTEST 0
+
 // ========== 电源管理 ==========
 #define POWER_CHARGE_DETECT_PIN GPIO_NUM_11
 #define POWER_ADC_UNIT ADC_UNIT_1
@@ -78,10 +87,16 @@
 #define SERVO1_PIN GPIO_NUM_3
 
 // ========== 各种灯 ==========
-#define LED_1_PIN GPIO_NUM_4    // 车顶左灯
-#define LED_2_PIN GPIO_NUM_5    // 车顶右灯
-#define LED_3_PIN GPIO_NUM_6    // 车底左灯
-#define LED_4_PIN GPIO_NUM_7    // 车底右灯
-#define LED_STRIP_PIN GPIO_NUM_8 // 车厢灯板
+// ⚠️ 2026-10-27 实测：下面 5 个宏是从"带摄像头"的板子抄来的占位符，
+//    和 CAMERA_PIN_D0..D3 / XCLK 完全重叠，**不是这块板量出来的**。
+//    实测结论见 工作文档\月球车-硬件台账.md：
+//      · 板上灯座丝印 G / V / S；3 针 5V WS2812 灯带 DIN 接 GPIO5 已点亮（GRB）
+//      · 其余 4 个"灯"脚未见到实物
+//    ⇒ GPIO5 现阶段当 WS2812 数据脚用，别再当"车顶右灯"打电平。
+#define LED_1_PIN GPIO_NUM_4    // 车顶左灯（占位符，未证实）
+#define LED_2_PIN GPIO_NUM_5    // 车顶右灯（占位符）；2026-10-27 实测用作 WS2812 数据脚
+#define LED_3_PIN GPIO_NUM_6    // 车底左灯（占位符，未证实）
+#define LED_4_PIN GPIO_NUM_7    // 车底右灯（占位符，未证实）
+#define LED_STRIP_PIN GPIO_NUM_8 // 车厢灯板（占位符，未证实）
 
 #endif // _BOARD_CONFIG_H_

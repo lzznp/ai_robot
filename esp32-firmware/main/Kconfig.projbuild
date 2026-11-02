@@ -165,6 +165,9 @@ choice BOARD_TYPE
     config BOARD_TYPE_ESP_BOX_LITE
         bool "Espressif ESP-BOX-Lite"
         depends on IDF_TARGET_ESP32S3
+    config BOARD_TYPE_DOLY
+        bool "Doly (ESP32-P4 + 2x 240x240 GC9A01)"
+        depends on IDF_TARGET_ESP32P4
     config BOARD_TYPE_ESP_P4_FUNCTION_EV_BOARD
         bool "Espressif ESP-P4-Function-EV-Board"
         depends on IDF_TARGET_ESP32P4
@@ -249,6 +252,14 @@ choice BOARD_TYPE
         depends on IDF_TARGET_ESP32S3
         help
             Lingkong S3 MOC CAM 1.54TFT board with ESP32-S3, 1.54 inch TFT, camera, and 4G module.
+
+    config BOARD_TYPE_WALI
+        bool "Wali (瓦力 · qebabe 硬件，引脚实测)"
+        depends on IDF_TARGET_ESP32S3
+        help
+            Wali robot: 2 DC motors (TC1508, GPIO13/14 + 17/18), 2 servos
+            (GPIO11 left / GPIO12 right), SSD1306 128x32 I2C OLED (41/42),
+            Simplex I2S audio. Pin map is MEASURED, not from the vendor config.
 
     config BOARD_TYPE_MOSS_550W
         bool "MOSS 550W"
@@ -485,7 +496,7 @@ choice ESP_S3_LCD_EV_Board_Version_TYPE
 endchoice
 
 choice DISPLAY_OLED_TYPE
-    depends on BOARD_TYPE_BREAD_COMPACT_WIFI || BOARD_TYPE_BREAD_COMPACT_ML307 || BOARD_TYPE_BREAD_COMPACT_ESP32
+    depends on BOARD_TYPE_BREAD_COMPACT_WIFI || BOARD_TYPE_BREAD_COMPACT_ML307 || BOARD_TYPE_BREAD_COMPACT_ESP32 || BOARD_TYPE_WALI
     prompt "OLED Type"
     default OLED_SSD1306_128X32
     help

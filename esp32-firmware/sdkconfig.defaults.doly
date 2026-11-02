@@ -1,0 +1,91 @@
+# doly 板（ESP32-P4 + 32MB Flash）专用默认值
+# 用法：idf.py -B build_doly -DSDKCONFIG=sdkconfig_doly \
+#              -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32p4;sdkconfig.defaults.doly" ...
+CONFIG_IDF_TARGET="esp32p4"
+CONFIG_BOARD_TYPE_DOLY=y
+
+# ESP32-P4 芯片版本：这块板是 rev v1.3（老批次），必须放行 rev < 3，
+# 否则 bootloader 会被 ESP-IDF 拒绝烧写：
+#   "bootloader.bin requires chip revision in range [v3.1 - v3.99]"
+# 这一组值与 Doly 开源工程的 sdkconfig.defaults.esp32p4 一致。
+CONFIG_ESP32P4_SELECTS_REV_LESS_V3=y
+CONFIG_ESP32P4_REV_MIN_100=y
+CONFIG_ESP32P4_REV_MIN_FULL=100
+CONFIG_ESP_REV_MIN_FULL=100
+
+# 32MB Flash（覆盖 sdkconfig.defaults.esp32p4 里的 16MB）
+CONFIG_ESPTOOLPY_FLASHSIZE_32MB=y
+
+# 分区表：doly_32m.csv（含 model / assets / behavior）
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions/doly_32m.csv"
+
+# 后台地址：自建 xiaozhi-server（本机 192.168.199.106，OTA 走 8003）
+# 运行时可被 NVS 的 wifi/ota_url 覆盖（配网页 Advanced → Custom OTA URL），
+# 所以以后换后台地址不必每次重编（main\ota.cc:44-47）。
+CONFIG_OTA_URL="http://192.168.199.106:8003/xiaozhi/ota/"
+
+# 双 240x240 圆屏用大字号字体
+CONFIG_LV_FONT_MONTSERRAT_20=y
+CONFIG_LV_USE_SNAPSHOT=y
+CONFIG_LV_USE_GIF=y
+
+# ============================================================================
+# P4 <-> C6 SDIO（WiFi 全靠这条链路）
+#
+# ★ 必须显式指定引脚。ESP-IDF / esp_hosted 的默认值是别的开发板的：
+#     CLK 18 / CMD 19 / D0 14 / D1 15 / D2 16 / D3 17 / RESET 54
+#   而这块板的 LCD1 用了 14(MOSI)/15(RST)/16(背光)、电机用了 17/18
+#   ⇒ 不覆盖就会撞脚，实测现象是：
+#     E sdmmc_io: sdmmc_io_reset: unexpected return: 0x108
+#     E sdio_wrapper: sdmmc_card_init failed
+#     Guru Meditation Error: Instruction access fault
+#   真实引脚（同 Doly 开源工程）：CLK 47 / CMD 48 / D0 46 / D1 45 / D2 44 / D3 43 / RESET 42
+# ============================================================================
+CONFIG_IDF_SLAVE_TARGET="esp32c6"
+CONFIG_ESP_SDIO_GPIO_RESET_SLAVE=42
+CONFIG_ESP_SDIO_PIN_CMD=48
+CONFIG_ESP_SDIO_PIN_CLK=47
+CONFIG_ESP_SDIO_PIN_D0=46
+CONFIG_ESP_SDIO_PIN_D1=45
+CONFIG_ESP_SDIO_PIN_D2=44
+CONFIG_ESP_SDIO_PIN_D3=43
+CONFIG_ESP_HOSTED_PRIV_SDIO_PIN_CMD_SLOT_1=48
+CONFIG_ESP_HOSTED_PRIV_SDIO_PIN_CLK_SLOT_1=47
+CONFIG_ESP_HOSTED_PRIV_SDIO_PIN_D0_SLOT_1=46
+CONFIG_ESP_HOSTED_PRIV_SDIO_PIN_D1_4BIT_BUS_SLOT_1=45
+CONFIG_ESP_HOSTED_PRIV_SDIO_PIN_D2_4BIT_BUS_SLOT_1=44
+CONFIG_ESP_HOSTED_PRIV_SDIO_PIN_D3_4BIT_BUS_SLOT_1=43
+CONFIG_ESP_HOSTED_SDIO_PIN_CMD=48
+CONFIG_ESP_HOSTED_SDIO_PIN_CLK=47
+CONFIG_ESP_HOSTED_SDIO_PIN_D0=46
+CONFIG_ESP_HOSTED_SDIO_PRIV_PIN_D1_4BIT_BUS=45
+CONFIG_ESP_HOSTED_SDIO_PIN_D2=44
+CONFIG_ESP_HOSTED_SDIO_PIN_D3=43
+CONFIG_ESP_HOSTED_SDIO_PIN_D1=45
+
+# ============================================================================
+# 32MB Flash 的"后半段"要能用
+#
+# 实测告警：Detected flash size > 16 MB, but access beyond 16 MB is not supported
+# 而 assets 分区在 0x1110000（17MB），不打开 32 位地址就永远读不到。
+# 这一组与 Doly 开源工程一致（颗粒为 Boya）。
+# ============================================================================
+CONFIG_SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP=y
+CONFIG_SPI_FLASH_32BIT_ADDR_ENABLE=y
+CONFIG_SPI_FLASH_QUAD_32BIT_ADDR_ENABLE=y
+CONFIG_SPI_FLASH_SUPPORT_BOYA_CHIP=y
+
+# PSRAM / mbedTLS 分配策略：按 Doly 的实测值（不用 esp32p4 默认值）
+CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP=n
+CONFIG_MBEDTLS_EXTERNAL_MEM_ALLOC=n
+
+# 音频：ES7243E 有参考通道，开设备端 AEC
+CONFIG_USE_DEVICE_AEC=y
+
+# 其它（同 Doly）
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=10240
+CONFIG_USB_HOST_CONTROL_TRANSFER_MAX_SIZE=1024
+CONFIG_SPIFFS_OBJ_NAME_LEN=64
+CONFIG_LWIP_MAX_SOCKETS=20
+

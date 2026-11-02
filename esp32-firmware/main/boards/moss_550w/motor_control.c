@@ -2,26 +2,40 @@
 // 步进电机控制 - 实现
 // 驱动芯片: 74HC595 + ULN2003
 // 电机型号: 24BYJ48 (四相八拍)
-// 最后更新: 2026-07-06
+//
+// 硬件接线（经 FlyingProbeTesting.json 网表核实）:
+//   GPIO03 → U6.11 (SHCP / SRCLK)
+//   GPIO04 → U6.12 (STCP / RCLK)
+//   GPIO05 → U6.14 (DS   / SER)
+//   U6 Q0..Q3 → ULN2003 → 电机1 (U9 / CN3)
+//   U6 Q4..Q7 → ULN2003 → 电机2 (U11 / CN4)
+//
+// 2026-10-19 修订（4 个 bug）:
+//   [B1] 两个电机抢同一个队列、收到别人的命令就丢弃 ⇒ 改为每电机一个队列
+//   [B2] motor_set_phase() 覆盖整个 595 输出字节，把另一个电机的相位清零
+//        ⇒ 改为 hc595_modify() 只改自己那半个字节
+//   [B3] hc595_write() 无互斥，两个任务并发时移位时钟交错 ⇒ 加互斥量
+//   [B4] 1000/speed 在 speed>100 时算出 <10ms，pdMS_TO_TICKS 直接变 0
+//        ⇒ 小于一个 tick 时改用 esp_rom_delay_us
 // ============================================================
 
 #include "motor_control.h"
 #include "config.h"
 
 #include "esp_log.h"
+#include "esp_rom_sys.h"
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#include "freertos/semphr.h"
 
 static const char *TAG = "MOTOR_CTRL";
 
 // ============================================================
 // 四相八拍时序表
-// 每拍对应一个相序, 共8拍
-// 1 = 该相导通, 0 = 该相关断
 // ============================================================
-#define MOTOR_STEPS_PER_REV 512  // 24BYJ48 减速后每圈步数 (512步/圈)
+#define MOTOR_STEPS_PER_REV 512  // 24BYJ48 减速后每圈步数
 
 static const uint8_t step_sequences[8][4] = {
     {1, 0, 0, 0},   // 拍0: A
@@ -35,15 +49,17 @@ static const uint8_t step_sequences[8][4] = {
 };
 
 // ============================================================
-// 电机状态结构体
+// 电机状态
 // ============================================================
 typedef struct {
-    uint8_t phase;              // 当前相位 (0-7)
-    uint16_t step_count;        // 当前电机位置 (步数)
-    uint8_t running;            // 是否在运行
-    uint8_t direction;          // 当前方向
-    uint16_t speed;             // 速度 (步/秒)
-    TaskHandle_t task_handle;   // 任务句柄
+    uint8_t phase;
+    uint16_t step_count;
+    volatile uint8_t running;
+    uint8_t direction;
+    uint16_t speed;
+    uint32_t delay_acc_us;      // 延时误差累积（不足一个 tick 的余量带到下一步）
+    TaskHandle_t task_handle;
+    uint8_t hold;               // 走完是否保持力矩（2026-11-01）
 } motor_state_t;
 
 static motor_state_t motors[2] = {
@@ -51,142 +67,152 @@ static motor_state_t motors[2] = {
     { .phase = 0, .step_count = 0, .running = 0, .direction = 0, .speed = 100, .task_handle = NULL },
 };
 
-static QueueHandle_t motor_queue = NULL;
+// [B1] 每个电机一个独立队列，不再抢同一个
+static QueueHandle_t motor_queue[2] = { NULL, NULL };
 
-// ============================================================
-// 74HC595 当前输出状态 (软件维护，因为芯片不支持读取)
-// ============================================================
+// [B3] 595 输出状态 + 互斥保护
 static uint8_t hc595_current = 0;
+static SemaphoreHandle_t s_hc595_mutex = NULL;
 
 // ============================================================
-// 74HC595 底层驱动 (写入并记录当前状态)
+// 74HC595 底层时序（必须已持锁）
 // ============================================================
-static void hc595_write(uint8_t data)
+static void hc595_shift_out(uint8_t data)
 {
-    hc595_current = data;  // 记录当前输出状态
-
-    // 逐位发送 (MSB first)
     for (int i = 7; i >= 0; i--) {
         gpio_set_level(HC595_DS_GPIO, (data >> i) & 0x01);
         gpio_set_level(HC595_SHCP_GPIO, 1);
         gpio_set_level(HC595_SHCP_GPIO, 0);
     }
-    // 锁存输出
     gpio_set_level(HC595_STCP_GPIO, 1);
     gpio_set_level(HC595_STCP_GPIO, 0);
 }
 
-// ============================================================
-// 读取当前 74HC595 输出值 (从软件维护的变量读取)
-// ============================================================
-static uint8_t hc595_read_current(void)
+// 整体覆盖写出
+static void hc595_write_locked(uint8_t data)
 {
-    return hc595_current;
+    if (s_hc595_mutex) xSemaphoreTake(s_hc595_mutex, portMAX_DELAY);
+    hc595_current = data;
+    hc595_shift_out(data);
+    if (s_hc595_mutex) xSemaphoreGive(s_hc595_mutex);
+}
+
+// [B2] 只修改指定的位：先与 and_mask 清零，再或上 or_bits
+static void hc595_modify(uint8_t and_mask, uint8_t or_bits)
+{
+    if (s_hc595_mutex) xSemaphoreTake(s_hc595_mutex, portMAX_DELAY);
+    hc595_current = (uint8_t)((hc595_current & and_mask) | or_bits);
+    hc595_shift_out(hc595_current);
+    if (s_hc595_mutex) xSemaphoreGive(s_hc595_mutex);
 }
 
 // ============================================================
-// 设置电机相序
+// 设置电机相序（只动自己那半个字节）
 // ============================================================
 static void motor_set_phase(uint8_t motor_id, uint8_t phase)
 {
     if (motor_id > 1) return;
 
     const uint8_t *seq = step_sequences[phase];
-
-    // 74HC595 输出布局:
-    // Q0-Q3 → 电机1 (A/B/C/D)
-    // Q4-Q7 → 电机2 (A/B/C/D)
-    uint8_t data = 0;
+    uint8_t bits = (uint8_t)(seq[0] | (seq[1] << 1) | (seq[2] << 2) | (seq[3] << 3));
 
     if (motor_id == 0) {
-        data |= (seq[0] << 0);  // Q0 = 电机1 A相
-        data |= (seq[1] << 1);  // Q1 = 电机1 B相
-        data |= (seq[2] << 2);  // Q2 = 电机1 C相
-        data |= (seq[3] << 3);  // Q3 = 电机1 D相
+        hc595_modify(0xF0, bits);        // 保留高半字节（电机2）
     } else {
-        data |= (seq[0] << 4);  // Q4 = 电机2 A相
-        data |= (seq[1] << 5);  // Q5 = 电机2 B相
-        data |= (seq[2] << 6);  // Q6 = 电机2 C相
-        data |= (seq[3] << 7);  // Q7 = 电机2 D相
+        hc595_modify(0x0F, (uint8_t)(bits << 4));  // 保留低半字节（电机1）
     }
-
-    hc595_write(data);
     motors[motor_id].phase = phase;
 }
 
 // ============================================================
-// 释放电机 (所有相关断)
+// 释放电机（所有相关断）
 // ============================================================
 void motor_release(uint8_t motor_id)
 {
     if (motor_id > 1) return;
-    // 将该电机的所有相设置为0
-    uint8_t data = hc595_read_current();
-    if (motor_id == 0) {
-        data &= 0xF0;  // 清除 Q0-Q3
-    } else {
-        data &= 0x0F;  // 清除 Q4-Q7
-    }
-    hc595_write(data);
-    ESP_LOGI(TAG, "Motor %d released", motor_id);
+    hc595_modify(motor_id == 0 ? 0xF0 : 0x0F, 0x00);
+    ESP_LOGI(TAG, "电机%d: 释放相位（全部断电）", motor_id + 1);
 }
 
 // ============================================================
-// 电机控制任务
+// [B6] 一步的延时 —— 让出 CPU，同时靠累积补偿保证平均速度
+//
+// 踩过的两个坑：
+//   ① pdMS_TO_TICKS(16) 在 100Hz tick 下 = 1 tick = 10ms，60 步/秒 被压成 100 步/秒
+//   ② 改用 esp_rom_delay_us 忙等后：电机任务绑在 core 0、优先级 5，
+//      xQueueSend 后立刻抢占同核的调用者（app_main，优先级 1），
+//      忙等 2 秒不放手 ⇒ 调用者的日志变成在末尾打印，而且生产固件里会卡住音频。
+//
+// 现在的做法：用 vTaskDelay 让出 CPU，把「不足一个 tick 的余量」记到
+// delay_acc_us 里带到下一步 ⇒ 单步有 ±10ms 抖动，但长期平均速度准确。
+// ============================================================
+static void step_delay(uint8_t motor_id)
+{
+    uint16_t speed = motors[motor_id].speed;
+    if (speed < 1) speed = 1;
+
+    uint32_t period_us = 1000000u / speed;
+    uint32_t acc = motors[motor_id].delay_acc_us + period_us;
+
+    TickType_t ticks = pdMS_TO_TICKS(acc / 1000u);
+    if (ticks == 0) {
+        // 还不够一个 tick：这一步不睡，欠账留到下一步
+        motors[motor_id].delay_acc_us = acc;
+        return;
+    }
+
+    vTaskDelay(ticks);
+
+    uint32_t slept_us = (uint32_t)ticks * (uint32_t)portTICK_PERIOD_MS * 1000u;
+    motors[motor_id].delay_acc_us = (acc > slept_us) ? (acc - slept_us) : 0;
+}
+
+// ============================================================
+// 电机控制任务（每个电机一个）
 // ============================================================
 static void motor_task(void *arg)
 {
     uint8_t motor_id = (uint8_t)(intptr_t)arg;
 
     while (1) {
-        // 等待队列消息
         uint32_t cmd;
-        if (xQueueReceive(motor_queue, &cmd, portMAX_DELAY) == pdTRUE) {
-            // 检查目标电机
-            uint8_t target_id = (cmd >> 24) & 0xFF;
-            if (target_id != motor_id) continue;
+        if (xQueueReceive(motor_queue[motor_id], &cmd, portMAX_DELAY) != pdTRUE) {
+            continue;
+        }
 
-            // 解析命令
-            uint8_t direction = (cmd >> 16) & 0xFF;
-            uint16_t steps = cmd & 0xFFFF;
+        uint8_t direction = (cmd >> 16) & 0xFF;
+        uint16_t steps = cmd & 0xFFFF;
 
-            if (steps == 0xFFFF) {
-                // 持续旋转模式
-                motors[motor_id].running = 1;
-                motors[motor_id].direction = direction;
+        motors[motor_id].running = 1;
+        motors[motor_id].direction = direction;
 
-                while (motors[motor_id].running) {
-                    uint8_t next_phase;
-                    if (direction == MOTOR_CW) {
-                        next_phase = (motors[motor_id].phase + 1) % 8;
-                    } else {
-                        next_phase = (motors[motor_id].phase + 7) % 8;
-                    }
-                    motor_set_phase(motor_id, next_phase);
-                    motors[motor_id].step_count++;
-                    int delay_ms = 1000 / motors[motor_id].speed;
-                    vTaskDelay(pdMS_TO_TICKS(delay_ms));
-                }
+        if (steps == 0xFFFF) {
+            // 持续旋转
+            while (motors[motor_id].running) {
+                uint8_t next = (direction == MOTOR_CW)
+                                   ? (uint8_t)((motors[motor_id].phase + 1) % 8)
+                                   : (uint8_t)((motors[motor_id].phase + 7) % 8);
+                motor_set_phase(motor_id, next);
+                motors[motor_id].step_count++;
+                step_delay(motor_id);
+            }
+        } else {
+            // 指定步数
+            for (uint16_t i = 0; i < steps && motors[motor_id].running; i++) {
+                uint8_t next = (direction == MOTOR_CW)
+                                   ? (uint8_t)((motors[motor_id].phase + 1) % 8)
+                                   : (uint8_t)((motors[motor_id].phase + 7) % 8);
+                motor_set_phase(motor_id, next);
+                motors[motor_id].step_count++;
+                step_delay(motor_id);
+            }
+            motors[motor_id].running = 0;
+            /* 2026-11-01：走完是否松劲，由 hold 标志决定。
+             * MOSS 是悬挂音响，垂直轴断电后可能被重力带走 ⇒ 需要 hold=1 保持力矩。
+             * 代价是 ULN2003/电机持续通电发热，所以默认仍是 0（松劲）。 */
+            if (motors[motor_id].hold) {
+                ESP_LOGI(TAG, "电机%d: 走完，保持力矩（不释放相位）", motor_id + 1);
             } else {
-                // 步进指定步数
-                motors[motor_id].running = 1;
-                motors[motor_id].direction = direction;
-
-                for (uint16_t i = 0; i < steps && motors[motor_id].running; i++) {
-                    uint8_t next_phase;
-                    if (direction == MOTOR_CW) {
-                        next_phase = (motors[motor_id].phase + 1) % 8;
-                    } else {
-                        next_phase = (motors[motor_id].phase + 7) % 8;
-                    }
-                    motor_set_phase(motor_id, next_phase);
-                    motors[motor_id].step_count++;
-                    int delay_ms = 1000 / motors[motor_id].speed;
-                    vTaskDelay(pdMS_TO_TICKS(delay_ms));
-                }
-
-                motors[motor_id].running = 0;
-                // 停止后释放相序
                 motor_release(motor_id);
             }
         }
@@ -194,126 +220,128 @@ static void motor_task(void *arg)
 }
 
 // ============================================================
-// 初始化步进电机控制
+// 初始化
 // ============================================================
 void motor_control_init(void)
 {
-    // 配置 GPIO 为推挽输出 + 高驱动能力
+    if (motor_queue[0] != NULL) {
+        ESP_LOGW(TAG, "already initialized");
+        return;
+    }
+
+    if (s_hc595_mutex == NULL) {
+        s_hc595_mutex = xSemaphoreCreateMutex();
+        if (s_hc595_mutex == NULL) {
+            ESP_LOGE(TAG, "创建互斥量失败");
+            return;
+        }
+    }
+
     gpio_config_t io_conf = {
         .pin_bit_mask = (1ULL << HC595_SHCP_GPIO) |
                         (1ULL << HC595_STCP_GPIO) |
                         (1ULL << HC595_DS_GPIO),
         .mode = GPIO_MODE_OUTPUT,
-        .pull_up_en = GPIO_PULLUP_ENABLE,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .intr_type = GPIO_INTR_DISABLE,
     };
     ESP_ERROR_CHECK(gpio_config(&io_conf));
 
-    // ★ 新增：设置 GPIO 驱动能力为最高 (3 = 最高)
-    // 注意：ESP32-S3 的 drive strength 范围是 0-3
-    for (int i = 0; i < 3; i++) {
-        gpio_set_drive_capability(HC595_SHCP_GPIO, GPIO_DRIVE_CAP_3);
-        gpio_set_drive_capability(HC595_STCP_GPIO, GPIO_DRIVE_CAP_3);
-        gpio_set_drive_capability(HC595_DS_GPIO, GPIO_DRIVE_CAP_3);
-    }
+    // 74HC595 由 3.3V 驱动、5V 供电，时钟沿要干净：给最高驱动能力
+    gpio_set_drive_capability(HC595_SHCP_GPIO, GPIO_DRIVE_CAP_3);
+    gpio_set_drive_capability(HC595_STCP_GPIO, GPIO_DRIVE_CAP_3);
+    gpio_set_drive_capability(HC595_DS_GPIO, GPIO_DRIVE_CAP_3);
 
-    // 创建队列 (用于跨任务通信)
-    motor_queue = xQueueCreate(10, sizeof(uint32_t));
-    if (motor_queue == NULL) {
-        ESP_LOGE(TAG, "Failed to create motor queue");
-        return;
-    }
+    // 上电先全部清零，避免电机上电自己动
+    hc595_write_locked(0x00);
 
-    // 创建两个电机控制任务
+    /* 2026-11-01：垂直轴（motor=0）**不需要**靠通电保持力矩 —— 用户实测：
+     * 给它断电后机构自己就停住（不会因重力回落），所以 hold 保持默认 0（走完松劲），
+     * 避免白发热。要临时保持力矩仍可发 release:false。 */
+
     for (int i = 0; i < 2; i++) {
-        xTaskCreatePinnedToCore(
-            motor_task,
-            "motor_task",
-            2048,
-            (void *)(intptr_t)i,
-            5,
-            &motors[i].task_handle,
-            i % 2
-        );
-        if (motors[i].task_handle == NULL) {
-            ESP_LOGE(TAG, "Failed to create motor task %d", i);
+        motor_queue[i] = xQueueCreate(10, sizeof(uint32_t));
+        if (motor_queue[i] == NULL) {
+            ESP_LOGE(TAG, "Fail to create motor %d queue", i);
+            return;
+        }
+        if (xTaskCreatePinnedToCore(
+                motor_task, "motor_task", 3072, (void *)(intptr_t)i,
+                5, &motors[i].task_handle, i % 2) != pdPASS) {
+            ESP_LOGE(TAG, "Fail to create motor %d task", i);
         }
     }
 
-    // 初始化 74HC595 输出全部为低
-    hc595_write(0x00);
-
-    ESP_LOGI(TAG, "Motor control initialized");
+    ESP_LOGI(TAG, "Motor control initialized (dual queue, mutex protected)");
 }
 
 // ============================================================
-// 设置电机速度
+// 设置速度
 // ============================================================
 void motor_set_speed(uint8_t motor_id, uint16_t steps_per_sec)
 {
     if (motor_id > 1) return;
     if (steps_per_sec < 1) steps_per_sec = 1;
-    if (steps_per_sec > 500) steps_per_sec = 500;  // 限制最高速度
+    if (steps_per_sec > 500) steps_per_sec = 500;
     motors[motor_id].speed = steps_per_sec;
-    ESP_LOGI(TAG, "Motor %d speed set to %d steps/sec", motor_id, steps_per_sec);
+    ESP_LOGI(TAG, "电机%d: 速度 = %d 步/秒", motor_id + 1, steps_per_sec);
 }
 
 // ============================================================
-// 电机持续旋转
+// 持续旋转
 // ============================================================
 void motor_rotate(uint8_t motor_id, uint8_t direction)
 {
-    if (motor_id > 1) return;
-    if (motors[motor_id].running) {
-        motor_stop(motor_id);
-    }
-    // 发送命令: 0xFF 表示持续旋转
-    uint32_t cmd = (motor_id << 24) | (direction << 16) | 0xFFFF;
-    xQueueSend(motor_queue, &cmd, 0);
-    ESP_LOGI(TAG, "Motor %d rotating %s", motor_id, direction ? "CCW" : "CW");
+    if (motor_id > 1 || motor_queue[motor_id] == NULL) return;
+    motors[motor_id].running = 0;          // 先让当前动作退出循环
+    vTaskDelay(pdMS_TO_TICKS(1));
+    motors[motor_id].running = 1;
+    motors[motor_id].direction = direction;
+    uint32_t cmd = ((uint32_t)motor_id << 24) | ((uint32_t)direction << 16) | 0xFFFFu;
+    xQueueSend(motor_queue[motor_id], &cmd, 0);
+    ESP_LOGI(TAG, "电机%d: 持续旋转 %s", motor_id + 1, direction ? "CCW反转" : "CW正转");
 }
 
 // ============================================================
-// 电机停止
+// 停止
 // ============================================================
 void motor_stop(uint8_t motor_id)
 {
     if (motor_id > 1) return;
     motors[motor_id].running = 0;
     motor_release(motor_id);
-    ESP_LOGI(TAG, "Motor %d stopped", motor_id);
+    ESP_LOGI(TAG, "电机%d: 已停止", motor_id + 1);
 }
 
 // ============================================================
-// 电机步进指定步数 (阻塞)
+// 步进指定步数
+// 注意：本函数**不阻塞**，只把命令丢进队列就返回。
+//       需要等它走完，就轮询 motor_is_running() 或 motor_get_position()。
 // ============================================================
 void motor_step(uint8_t motor_id, uint8_t direction, uint16_t steps)
 {
-    if (motor_id > 1) return;
-    if (motors[motor_id].running) {
-        motor_stop(motor_id);
-    }
-    // 发送命令
-    uint32_t cmd = (motor_id << 24) | (direction << 16) | (steps & 0xFFFF);
-    xQueueSend(motor_queue, &cmd, 0);
-    ESP_LOGI(TAG, "Motor %d stepping %d steps %s",
-             motor_id, steps, direction ? "CCW" : "CW");
+    if (motor_id > 1 || motor_queue[motor_id] == NULL) return;
+    motors[motor_id].running = 0;          // 打断上一次
+    vTaskDelay(pdMS_TO_TICKS(1));
+    uint32_t cmd = ((uint32_t)motor_id << 24) | ((uint32_t)direction << 16) | (steps & 0xFFFFu);
+    xQueueSend(motor_queue[motor_id], &cmd, 0);
+    ESP_LOGI(TAG, "电机%d: 步进 %d 步 %s", motor_id + 1, steps, direction ? "CCW反转" : "CW正转");
 }
 
 // ============================================================
-// 紧急停止 (两个电机同时停止)
+// 紧急停止
 // ============================================================
 void motor_emergency_stop(void)
 {
     motors[0].running = 0;
     motors[1].running = 0;
-    hc595_write(0x00);  // 所有相关断
-    ESP_LOGI(TAG, "Emergency stop!");
+    hc595_write_locked(0x00);
+    ESP_LOGW(TAG, "EMERGENCY STOP");
 }
 
 // ============================================================
-// 电机状态查询
+// 状态查询
 // ============================================================
 uint8_t motor_is_running(uint8_t motor_id)
 {
@@ -325,4 +353,16 @@ uint16_t motor_get_position(uint8_t motor_id)
 {
     if (motor_id > 1) return 0;
     return motors[motor_id].step_count;
+}
+
+// ============================================================
+// 设置"走完是否保持力矩"（2026-11-01）
+//   hold = 1 → 走到目标步数后不释放相位，靠持续通电顶住负载
+//   hold = 0 → 释放（缺省）
+// 注意：只影响**下一次**固定步数移动的收尾；已经在跑的不受影响。
+// ============================================================
+void motor_set_hold(uint8_t motor_id, uint8_t hold)
+{
+    if (motor_id > 1) return;
+    motors[motor_id].hold = hold ? 1 : 0;
 }

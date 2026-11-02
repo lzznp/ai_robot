@@ -64,6 +64,23 @@ public:
     virtual void Stop() {}
     virtual void Wave() {}
     virtual void SetServoAngle(int angle) {}
+
+    // ============================================================
+    // ★ 步进电机（芯片级，2026-11-01）
+    //
+    // 为什么不能走 gpio/pwm：步进要**相序 + 串行移位**（MOSS 是 74HC595 + ULN2003），
+    // 一步 = 26 次电平操作、16ms 内做完；靠后台发 gpio 动作既跟不上节拍，
+    // 又会踩掉 595 上与另一台电机共享的半个字节。跟 ws2812 是同一类问题。
+    //
+    // 参数（全部是硬件事实，不含“左转/前进”这类语义）：
+    //   motor      : 第几路（0 = 第 1 路，1 = 第 2 路）
+    //   steps      : 步数，**带符号**：正 = 一个方向，负 = 反方向
+    //   speed_hz   : 每秒多少步
+    //   hold_torque: 走完是否保持力矩（悬挂机构怕重力下垂就 true；发热就 false）
+    //
+    // 要求：**非阻塞**（把命令丢给驱动就返回）。等它走完由应用层的延时机制处理。
+    // ============================================================
+    virtual void StepMotor(int motor, int steps, int speed_hz, bool hold_torque) {}
 };
 
 #define DECLARE_BOARD(BOARD_CLASS_NAME) \

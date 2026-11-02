@@ -1,0 +1,16 @@
+=== 这版固件 ExecuteTask 动作对号 ===
+动作分发日志(逐条)               [%d] Action: %s                        命中 1
+未知动作                   未知动作类型: %s                               命中 1
+gpio 执行                (hold %d ms)                             — 没有
+pwm 执行                 pulse_us                                 — 没有
+servo 执行                 Servo -> %d                            命中 1
+move 执行                  Move: %s, duration: %d ms              命中 1
+delay 执行                 Delay: %d ms                           命中 1
+emotion 执行               Emotion: %s                            命中 1
+未知任务类型                  未知任务类型: %s                              命中 1
+TaskItem 队列日志          [TaskQueue] 取出任务                         命中 1
+TTS 直达播放               PlayTtsDirectly                          命中 1
+code_stream 解释器        CodeInterpreter                          命中 1
+mcp 通道                 "type":"mcp"                             命中 1
+camera 拍照工具            self.camera.take_photo                   命中 1
+屏幕亮度工具                 self.screen.set_brightness               命中 1

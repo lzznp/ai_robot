@@ -1,0 +1,173 @@
+PIN=4 LEVEL=1 MS=600
+ESP-ROM:esp32s3-20210327
+Build:Mar 27 2021
+rst:0x15 (USB_UART_CHIP_RESET),boot:0x18 (SPI_FAST_FLASH_BOOT)
+Saved PC:0x403835c2
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce2820,len:0x548
+load:0x403c8700,len:0xc3c
+load:0x403cb700,len:0x2d9c
+entry 0x403c8908
+I (35) octal_psram: vendor id    : 0x0d (AP)
+I (35) octal_psram: dev id       : 0x02 (generation 3)
+I (36) octal_psram: density      : 0x03 (64 Mbit)
+I (37) octal_psram: good-die     : 0x01 (Pass)
+I (41) octal_psram: Latency      : 0x01 (Fixed)
+I (46) octal_psram: VCC          : 0x01 (3V)
+I (50) octal_psram: SRF          : 0x01 (Fast Refresh)
+I (55) octal_psram: BurstType    : 0x01 (Hybrid Wrap)
+I (59) octal_psram: BurstLen     : 0x01 (32 Byte)
+I (64) octal_psram: Readlatency  : 0x02 (10 cycles@Fixed)
+I (69) octal_psram: DriveStrength: 0x00 (1/1)
+I (73) MSPI Timing: Enter psram timing tuning
+I (78) esp_psram: Found 8MB PSRAM device
+I (81) esp_psram: Speed: 80MHz
+I (84) cpu_start: Multicore app
+I (98) cpu_start: GPIO 44 and 43 are used as console UART I/O pins
+I (98) cpu_start: Pro cpu start user code
+I (98) cpu_start: cpu freq: 240000000 Hz
+I (100) app_init: Application information:
+I (104) app_init: Project name:     xiaozhi
+I (108) app_init: App version:      2.0.5
+I (111) app_init: Compile time:     Jul 21 2026 09:43:47
+I (116) app_init: ELF file SHA256:  a9ae313b6...
+I (121) app_init: ESP-IDF:          v5.5.4
+I (124) efuse_init: Min chip rev:     v0.0
+I (128) efuse_init: Max chip rev:     v0.99 
+I (132) efuse_init: Chip rev:         v0.2
+I (136) heap_init: Initializing. RAM available for dynamic allocation:
+I (142) heap_init: At 3FCAFB00 len 00039C10 (231 KiB): RAM
+I (148) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM
+I (153) heap_init: At 3FCF0000 len 00008000 (32 KiB): DRAM
+I (158) heap_init: At 600FE000 len 00001FD8 (7 KiB): RTCRAM
+I (163) esp_psram: Adding pool of 8192K of PSRAM memory to heap allocator
+I (170) spi_flash: detected chip: generic
+I (173) spi_flash: flash io: qio
+I (177) sleep_gpio: Configure to isolate all GPIO pins in sleep state
+I (183) sleep_gpio: Enable automatic switching of GPIO sleep configuration
+I (190) main_task: Started on CPU0
+I (200) esp_psram: Reserving pool of 64K of internal memory for DMA/internal allocations
+I (200) main_task: Calling app_main()
+I (230) Board: UUID=58b2113e-ed4f-45cd-9ace-94421ec3b4f8 SKU=lingkong-s3-moc-cam-1.54tft
+I (230) button: IoT Button Version: 4.1.4
+I (230) Powr manager[61]: adc_value 2367
+I (230) Powr manager[123]: ADC value: 2367 average: 2367 level: 100
+W (240) i2c.master: Please check pull-up resistances whether be connected properly. Otherwise unexpected behavior would happen. For more detailed information, please read docs
+I (370) Display: Power management not supported
+I (420) LcdDisplay: Turning display on
+I (420) LcdDisplay: Initialize LVGL library
+I (420) LcdDisplay: Use 2MB of PSRAM for image cache
+I (420) LcdDisplay: Initialize LVGL port
+I (430) LcdDisplay: Adding LCD display
+I (430) LVGL: Starting LVGL task
+I (440) ServoControl: Servo initialized on GPIO 3
+I (440) LichuangDevBoard: Motor and servo initialized!
+I (440) LichuangDevBoard: ✅ 运动控制系统已就绪，等待指令
+I (450) Application: STATE: starting
+I (480) Es8311AudioCodec: Duplex channels created
+I (480) ES8311: Work in Slave mode
+I (490) Es8311AudioCodec: Es8311AudioCodec initialized
+I (490) AudioCodec: Set input enable to true
+I (490) I2S_IF: channel mode 0 bits:16/16 channel:2 mask:1
+I (490) I2S_IF: STD Mode 1 bits:16/16 channel:2 sample_rate:24000 mask:1
+I (500) I2S_IF: channel mode 0 bits:16/16 channel:2 mask:1
+I (500) I2S_IF: STD Mode 0 bits:16/16 channel:2 sample_rate:24000 mask:1
+I (520) Adev_Codec: Open codec device OK
+I (520) AudioCodec: Set output enable to true
+I (520) AudioCodec: Audio codec started
+I (530) OpusResampler: Resampler configured with input sample rate 24000 and output sample rate 16000
+I (530) OpusResampler: Resampler configured with input sample rate 24000 and output sample rate 16000
+I (540) AudioCodec: Set input enable to false
+I (540) AudioService: 🔇 麦克风已强制关闭（输入禁用）
+I (550) pp: pp rom version: e7ae62f
+I (550) net80211: net80211 rom version: e7ae62f
+I (570) wifi:wifi driver task: 3fcdb5e0, prio:23, stack:6144, core=0
+I (570) wifi:wifi firmware version: 0947e8b
+I (570) wifi:wifi certification version: v7.0
+I (570) wifi:config NVS flash: disabled
+I (580) wifi:config nano formatting: enabled
+I (580) wifi:Init data frame dynamic rx buffer num: 6
+I (580) wifi:Init dynamic rx mgmt buffer num: 5
+I (590) wifi:Init management short buffer num: 32
+I (590) wifi:Init dynamic tx buffer num: 32
+I (600) wifi:Init static tx FG buffer num: 2
+I (600) wifi:Init static rx buffer size: 1600
+I (610) wifi:Init static rx buffer num: 3
+I (610) wifi:Init dynamic rx buffer num: 6
+I (610) wifi_init: rx ba win: 3
+I (620) wifi_init: accept mbox: 6
+I (620) wifi_init: tcpip mbox: 16
+I (620) wifi_init: udp mbox: 6
+I (620) wifi_init: tcp mbox: 6
+I (630) wifi_init: tcp tx win: 5760
+I (630) wifi_init: tcp rx win: 5760
+I (630) wifi_init: tcp mss: 1440
+I (640) phy_init: phy_version 711,97bcf0a2,Aug 25 2025,19:04:10
+I (670) wifi:mode : sta (58:e6:c5:58:0c:58)
+I (670) wifi:enable tsf
+I (1230) Powr manager[61]: adc_value 2365
+I (1230) Powr manager[123]: ADC value: 2365 average: 2366 level: 100
+I (2230) Powr manager[61]: adc_value 2365
+I (2230) Powr manager[123]: ADC value: 2365 average: 2365 level: 100
+I (3080) WifiStation: Found AP: lz, BSSID: 50:92:6a:c9:d4:c1, RSSI: -34, Channel: 11, Authmode: 3
+W (3080) wifi:Password length matches WPA2 standards, authmode threshold changes from OPEN to WPA2
+I (4370) wifi:new:<11,0>, old:<1,0>, ap:<255,255>, sta:<11,0>, prof:1, snd_ch_cfg:0x0
+I (4370) wifi:state: init -> auth (0xb0)
+I (4380) wifi:state: auth -> assoc (0x0)
+I (4400) wifi:state: assoc -> run (0x10)
+I (4420) wifi:connected with lz, aid = 4, channel 11, BW20, bssid = 50:92:6a:c9:d4:c1
+I (4420) wifi:security: WPA2-PSK, phy: bgn, rssi: -30, cipher(pairwise:0x3, group:0x3), pmf:0
+I (4420) wifi:pm start, type: 1
+
+I (4430) wifi:dp: 1, bi: 102400, li: 3, scale listen interval from 307200 us to 307200 us
+I (4430) wifi:set rx beacon pti, rx_bcn_pti: 0, bcn_timeout: 25000, mt_pti: 0, mt_time: 10000
+I (4470) wifi:AP's beacon interval = 102400 us, DTIM period = 1
+I (4590) wifi:<ba-add>idx:0 (ifx:0, 50:92:6a:c9:d4:c1), tid:0, ssn:0, winSize:64
+I (5490) esp_netif_handlers: sta ip: 192.168.199.188, mask: 255.255.255.0, gw: 192.168.199.1
+I (5490) WifiStation: Got IP: 192.168.199.188
+I (5490) Assets: The storage free size is 21888 KB
+I (5490) Assets: The partition size is 8192 KB
+I (5570) Assets: The checksum calculation time is 72 ms
+I (5570) Assets: Refreshing display theme...
+W (5610) EmojiCollection: Emoji not found: microchip_ai
+I (5610) Application: STATE: activating
+I (5610) Ota: Current version: 2.0.5
+I (5810) HttpClient: Established new connection to 192.168.199.106:8003
+I (6130) HttpClient: HTTP connection closed
+I (6130) Ota: No mqtt section found !
+I (6130) Ota: Current is the latest version
+I (6130) Ota: Running partition: ota_0
+I (6130) MCP: Add tool: self.get_device_status
+I (6130) MCP: Add tool: self.audio_speaker.set_volume
+I (6140) MCP: Add tool: self.screen.set_theme
+I (6140) MCP: Add tool: self.get_system_info [user]
+I (6150) MCP: Add tool: self.reboot [user]
+I (6150) MCP: Add tool: self.upgrade_firmware [user]
+I (6160) MCP: Add tool: self.screen.get_info [user]
+I (6160) MCP: Add tool: self.screen.snapshot [user]
+I (6160) MCP: Add tool: self.screen.preview_image [user]
+I (6170) MCP: Add tool: self.assets.set_download_url [user]
+I (6170) SystemInfo: free sram: 145635 minimal sram: 139531
+I (6180) Application: STATE: idle
+I (6190) AudioService: OpusHead: version=1, channels=1, sample_rate=16000
+I (6190) AudioService: Resampling audio from 16000 to 24000
+I (6190) OpusResampler: Resampler configured with input sample rate 16000 and output sample rate 24000
+I (6210) Application: Device ready, auto-connecting to server...
+I (7210) Application: STATE: connecting
+I (7210) main_task: Returned from app_main()
+I (7210) WS: Connecting to websocket server: ws://192.168.199.106:8000/xiaozhi/v1/ with version: 1
+I (7280) WS: Session ID: af1b4856-a092-4135-97d1-c63455ff1d57
+I (7280) wifi:Set ps type: 0, coexist: 0
+
+W (7280) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+I (7290) Application: STATE: listening
+E (7300) MODEL_LOADER: Can not find model in partition table
+I (7300) AFE: AFE Version: (1MIC_V250121)
+I (7300) AFE: Input PCM Config: total 1 channels(1 microphone, 0 playback), sample rate:16000
+I (7310) AFE: AFE Pipeline: [input] -> |VAD(WebRTC)| -> [output]
+I (7320) AfeAudioProcessor: Audio communication task started, feed size: 512 fetch size: 512
+E (7440) AudioService: Should not be here, bits: 4
+W (7440) AudioService: Audio input task stopped
+I (7440) Application: 📩 OnIncomingJson: {"type":"mcp","payload":{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{"roots":{"listChanged":true},"sampling":{},"vision":{"url":"http://192.168.199.106:8003/mcp/vision/explain","token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjoibUI4VlFkRVh4RFd0cmJuT0JvTEFLT25UMWt6d1c2S3R6S0NmTG16MXJ6R25VdjhPUmh3MmI5ejFKaWFQREsxR0g1d1R5cDNCT29KLWdocjRsaUxBS0oxT3RLVnNPVTd0WjRFM0FaSEowNUg4by1zbjBfQTBHZz09In0.ZX_Wks_a1fiTyT3F_dUAFQGFrDsTtcTXMO810e_t8nI"}},"clientInfo":{"name":"XiaozhiClient","version":"1.0.0"}}}}
+I (8520) Application: 📩 OnIncomingJson: {"type":"mcp","payload":{"jsonrpc":"2.0","id":2,"method":"tools/list"}}

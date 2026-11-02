@@ -1,0 +1,78 @@
+=== app description ===
+project: xiaozhi_for_550W
+version: 1.9.4.550.2.1
+compile: 14:44:03 Nov 21 2025
+
+=== 关键词 ===
+led_strip              led_strip        命中 1
+ws2812/WS2812          ws2812           — 没有
+lamp/Lamp              lamp             — 没有
+LEDC                   LEDC             — 没有
+SingleLed              SingleLed        — 没有
+CircularStrip          CircularStrip    — 没有
+MCP 灯工具 lamp.on        self.lamp        — 没有
+跑马灯? motor             motor            命中 5
+MOSS 电机日志              Motor            命中 15
+74HC595                hc595            — 没有
+
+=== 含 led / lamp / strip / ws28 的字符串（219 条）===
+    !(is_rs485_mode && disabled && uart_hal_get_intraw_mask(&(uart_context[uart_num].hal)) & UART_INTR_TX_DONE)
+    Alloc buffer failed
+    Cache disabled but cached memory region accessed
+    DISABLED
+    E (%lu) %s: %s called, but s_sar_power_on_cnt == 0
+    E (%lu) %s: %s(%d): Failed to initialize pthread key
+    E (%lu) %s: %s(%d): IPC call failed
+    E (%lu) %s: %s(%d): Task snapshot alloc failed
+    E (%lu) %s: %s: mqtt_get_publish_data() failed
+    E (%lu) %s: %s: mqtt_get_publish_topic() failed
+    E (%lu) %s: Camera capture failed
+    E (%lu) %s: Camera init failed with error 0x%x
+    E (%lu) %s: Cannot start task: LED strip or timer not initialized
+    E (%lu) %s: Check that CONFIG_FREERTOS_UNICORE is enabled in menuconfig
+    E (%lu) %s: Failed to acquire suback data
+    E (%lu) %s: Failed to activate, code: %d, body: %s
+    E (%lu) %s: Failed to add display
+    E (%lu) %s: Failed to add mDNS service: %s
+    E (%lu) %s: Failed to allocate OTA buffer
+    E (%lu) %s: Failed to allocate memory for preview image
+    E (%lu) %s: Failed to allocate pthread cfg key!
+    E (%lu) %s: Failed to allocate pthread data!
+    E (%lu) %s: Failed to allocate task args!
+    E (%lu) %s: Failed to begin OTA
+    E (%lu) %s: Failed to calculate bootloader SHA-256
+    E (%lu) %s: Failed to calculate partition table SHA-256
+    E (%lu) %s: Failed to calculate running firmware SHA-256
+    E (%lu) %s: Failed to check version, status code: %d
+    E (%lu) %s: Failed to connect to %s:%d
+    E (%lu) %s: Failed to connect to WiFi %s
+    E (%lu) %s: Failed to connect to WiFi: %d
+    E (%lu) %s: Failed to connect to endpoint
+    E (%lu) %s: Failed to connect to explain URL
+    E (%lu) %s: Failed to connect to server
+    E (%lu) %s: Failed to connect to websocket server
+    E (%lu) %s: Failed to create I2C bus: %s
+    E (%lu) %s: Failed to create JPEG queue
+    E (%lu) %s: Failed to create LED strip (GPIO: %d, LEDs: %d), err: %s
+    E (%lu) %s: Failed to create audio decoder, error code: %d
+    E (%lu) %s: Failed to create audio encoder, error code: %d
+    E (%lu) %s: Failed to create frame queue (insufficient memory)
+    E (%lu) %s: Failed to create socket
+    E (%lu) %s: Failed to create task!
+    E (%lu) %s: Failed to create timer for LED strip (GPIO: %d), err: %s
+    E (%lu) %s: Failed to create transport list
+    E (%lu) %s: Failed to create video task (error: %d)
+    E (%lu) %s: Failed to create websocket
+    E (%lu) %s: Failed to decode audio
+    E (%lu) %s: Failed to decode audio, error code: %d
+    E (%lu) %s: Failed to decrypt audio data, ret: %d
+    E (%lu) %s: Failed to deliver publish message id=%d
+    E (%lu) %s: Failed to deliver suback message id=%d
+    E (%lu) %s: Failed to enable mDNS on STA: %s
+    E (%lu) %s: Failed to encode audio
+    E (%lu) %s: Failed to encode audio, error code: %ld
+    E (%lu) %s: Failed to encrypt audio data
+    E (%lu) %s: Failed to end OTA: %s
+    E (%lu) %s: Failed to get HC595 instance!
+    E (%lu) %s: Failed to get OTA state
+    E (%lu) %s: Failed to get STA netif handle (STA

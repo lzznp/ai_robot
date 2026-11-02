@@ -43,9 +43,21 @@ Ota::~Ota() {
 std::string Ota::GetCheckVersionUrl() {
     Settings settings("wifi", false);
     std::string url = settings.GetString("ota_url");
-    if (url.empty()) {
+    /* ★ 迁移规则（2026-10-26）：
+     * NVS 里的 wifi/ota_url 优先级高于编译值，而老设备（曾连官方云、或用官方固件）
+     * 会把 https://api.tenclass.net/xiaozhi/ota/ 存在 NVS 里 ⇒ 只改 sdkconfig
+     * 是**改不动的**，设备照样回官方云（实测：固件里已无 tenclass 字样，设备仍连它）。
+     *
+     * 而我们这个项目方向是「全部走自建后台」，官方云一律不再使用。
+     * ⇒ 只要 NVS 里存的还是官方云地址，就丢弃它，改用编译进来的自建地址。
+     * 想临时改地址请用配网页 Custom OTA URL（写别的地址，不受这条影响）。 */
+    if (url.empty() || url.find("tenclass.net") != std::string::npos) {
+        if (!url.empty()) {
+            ESP_LOGW(TAG, "NVS ota_url 指向官方云，已忽略: %s", url.c_str());
+        }
         url = CONFIG_OTA_URL;
     }
+    ESP_LOGI(TAG, "OTA check url: %s", url.c_str());
     return url;
 }
 

@@ -1,0 +1,34 @@
+=== MOSS 原厂固件里的显示相关证据 ===
+SSD1306                      SSD1306                        命中 2
+SSD1315                      SSD1315                        — 没有
+SH1106                       SH1106                         — 没有
+ST7789                       ST7789                         — 没有
+GC9A01                       GC9A01                         — 没有
+OledDisplay                  OledDisplay                    命中 1
+LcdDisplay                   LcdDisplay                     — 没有
+Install SSD1306 driver       Install SSD1306 driver         命中 1
+Failed to initialize display Failed to initialize display   命中 1
+esp_lcd_new_panel_ssd1306    esp_lcd_new_panel_ssd1306      命中 1
+lvgl                         lvgl                           — 没有
+LVGL                         LVGL                           命中 1
+No display                   No display                     — 没有
+display_                     display                        命中 10
+H4/I2C 相关日志                  I2C bus                        命中 1
+
+=== 含 display/oled/panel 的字符串（16 条，取前 70）===
+    ./main/display/display.cc
+    Display::Display()
+    E (%lu) %s: Failed to add display
+    E (%lu) %s: Failed to initialize display
+    E (%lu) %s: Failed to lock display
+    I (%lu) %s: Adding OLED display
+    I (%lu) %s: Install SSD1306 driver
+    I (%lu) %s: SSD1306 driver installed
+    I (%lu) %s: Turning display on
+    OledDisplay
+    bool Esp550wBoard::InitializeSsd1306Display()
+    display
+    display_update
+    esp_lcd_new_panel_io_i2c_v2(display_i2c_bus_, &io_config, &panel_io_)
+    esp_lcd_new_panel_ssd1306(panel_io_, &panel_config, &panel_)
+    virtual void Display::ShowNotification(const char*, int)

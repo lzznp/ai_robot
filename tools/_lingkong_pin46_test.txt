@@ -1,0 +1,117 @@
+t=   0.0s  A ws2812 RED  10s ok=True
+t=  11.0s  B ws2812 GREEN 10s ok=True
+t=  22.0s  C gpio HIGH   5s ok=True
+t=  28.0s  D OFF
+
+===== SERIAL =====
+I (220573) SystemInfo: free sram: 145427 minimal sram: 134815
+I (221093) Application: 📩 OnIncomingJson: {"type":"command","payload":{"actions":[{"type":"ws2812","pin":46,"count":2,"rgb":[64,0,0],"duration":10000}]}}
+I (221093) Application: 🎬 [Command] 收到新指令
+I (221093) Application: 📦 Payload: {"actions":[{"type":"ws2812","pin":46,"count":2,"rgb":[64,0,0],"duration":10000}]}
+I (221103) Application: 🎬 [Command] 收到 1 个动作
+I (221113) Application:   [0] Action: ws2812
+I (221113) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (221123) Application: 📋 [TaskQueue] 尝试获取锁...
+I (221123) Application: 📋 [TaskQueue] 锁已获取
+I (221133) Application: 📋 [TaskQueue] 取出任务: ws2812, 剩余: 0
+I (221133) Application: 📋 [TaskQueue] 锁已释放
+I (221143) Application: ⚡ [Task] 执行: ws2812
+I (221143) Application: [WS2812] 新建灯带 pin=46 count=2
+I (221153) Application: [WS2812] pin=46 count=2 rgb=(64,0,0)
+I (221153) Application: ⏰ [Delay] 延时 10000 ms 后继续
+I (230573) SystemInfo: free sram: 144451 minimal sram: 134815
+I (231163) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (231163) Application: 📋 [TaskQueue] 尝试获取锁...
+I (231163) Application: 📋 [TaskQueue] 锁已获取
+I (231173) Application: 📋 [TaskQueue] 取出任务: ws2812, 剩余: 0
+I (231173) Application: 📋 [TaskQueue] 锁已释放
+I (231183) Application: ⚡ [Task] 执行: ws2812
+I (231183) Application: [WS2812] pin=46 count=2 rgb=(0,0,0)
+I (231193) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (231193) Application: 📋 [TaskQueue] 尝试获取锁...
+I (231203) Application: 📋 [TaskQueue] 锁已获取
+I (231203) Application: 📋 [TaskQueue] 队列为空，停止
+I (232093) Application: 📩 OnIncomingJson: {"type":"command","payload":{"actions":[{"type":"ws2812","pin":46,"count":2,"rgb":[0,64,0],"duration":10000}]}}
+I (232103) Application: 🎬 [Command] 收到新指令
+I (232103) Application: 📦 Payload: {"actions":[{"type":"ws2812","pin":46,"count":2,"rgb":[0,64,0],"duration":10000}]}
+I (232113) Application: 🎬 [Command] 收到 1 个动作
+I (232123) Application:   [0] Action: ws2812
+I (232123) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (232133) Application: 📋 [TaskQueue] 尝试获取锁...
+I (232133) Application: 📋 [TaskQueue] 锁已获取
+I (232143) Application: 📋 [TaskQueue] 取出任务: ws2812, 剩余: 0
+I (232143) Application: 📋 [TaskQueue] 锁已释放
+I (232153) Application: ⚡ [Task] 执行: ws2812
+I (232153) Application: [WS2812] pin=46 count=2 rgb=(0,64,0)
+I (232163) Application: ⏰ [Delay] 延时 10000 ms 后继续
+I (240573) SystemInfo: free sram: 144455 minimal sram: 134815
+I (242163) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (242163) Application: 📋 [TaskQueue] 尝试获取锁...
+I (242163) Application: 📋 [TaskQueue] 锁已获取
+I (242173) Application: 📋 [TaskQueue] 取出任务: ws2812, 剩余: 0
+I (242173) Application: 📋 [TaskQueue] 锁已释放
+I (242183) Application: ⚡ [Task] 执行: ws2812
+I (242183) Application: [WS2812] pin=46 count=2 rgb=(0,0,0)
+I (242193) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (242193) Application: 📋 [TaskQueue] 尝试获取锁...
+I (242203) Application: 📋 [TaskQueue] 锁已获取
+I (242203) Application: 📋 [TaskQueue] 队列为空，停止
+I (242243) Powr manager[61]: adc_value 2419
+I (242243) Powr manager[123]: ADC value: 2419 average: 2418 level: 100
+I (243093) Application: 📩 OnIncomingJson: {"type":"command","payload":{"actions":[{"type":"gpio","pin":46,"level":1,"duration":5000}]}}
+I (243093) Application: 🎬 [Command] 收到新指令
+I (243103) Application: 📦 Payload: {"actions":[{"type":"gpio","pin":46,"level":1,"duration":5000}]}
+I (243113) Application: 🎬 [Command] 收到 1 个动作
+I (243113) Application:   [0] Action: gpio
+I (243123) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (243123) Application: 📋 [TaskQueue] 尝试获取锁...
+I (243133) Application: 📋 [TaskQueue] 锁已获取
+I (243133) Application: 📋 [TaskQueue] 取出任务: gpio, 剩余: 0
+I (243143) Application: 📋 [TaskQueue] 锁已释放
+I (243143) Application: ⚡ [Task] 执行: gpio
+I (243153) Application:   GPIO 46 -> 1 (hold 5000 ms)
+I (243153) Application: ⏰ [Delay] 延时 5000 ms 后继续
+I (248163) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (248163) Application: 📋 [TaskQueue] 尝试获取锁...
+I (248163) Application: 📋 [TaskQueue] 锁已获取
+I (248163) Application: 📋 [TaskQueue] 取出任务: gpio, 剩余: 0
+I (248173) Application: 📋 [TaskQueue] 锁已释放
+I (248173) Application: ⚡ [Task] 执行: gpio
+I (248183) Application:   GPIO 46 -> 0 (hold 0 ms)
+I (248183) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (248193) Application: 📋 [TaskQueue] 尝试获取锁...
+I (248193) Application: 📋 [TaskQueue] 锁已获取
+I (248203) Application: 📋 [TaskQueue] 队列为空，停止
+I (249123) Application: 📩 OnIncomingJson: {"type":"command","payload":{"actions":[{"type":"ws2812","pin":46,"count":2,"rgb":[0,0,0]}]}}
+I (249123) Application: 🎬 [Command] 收到新指令
+I (249133) Application: 📦 Payload: {"actions":[{"type":"ws2812","pin":46,"count":2,"rgb":[0,0,0]}]}
+I (249133) Application: 🎬 [Command] 收到 1 个动作
+I (249143) Application:   [0] Action: ws2812
+I (249143) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (249153) Application: 📋 [TaskQueue] 尝试获取锁...
+I (249153) Application: 📋 [TaskQueue] 锁已获取
+I (249163) Application: 📋 [TaskQueue] 取出任务: ws2812, 剩余: 0
+I (249173) Application: 📋 [TaskQueue] 锁已释放
+I (249173) Application: ⚡ [Task] 执行: ws2812
+I (249183) Application: [WS2812] pin=46 count=2 rgb=(0,0,0)
+I (249183) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (249193) Application: 📋 [TaskQueue] 尝试获取锁...
+I (249193) Application: 📋 [TaskQueue] 锁已获取
+I (249203) Application: 📋 [TaskQueue] 队列为空，停止
+I (249393) Application: 📩 OnIncomingJson: {"type":"command","payload":{"actions":[{"type":"gpio","pin":46,"level":0}]}}
+I (249393) Application: 🎬 [Command] 收到新指令
+I (249403) Application: 📦 Payload: {"actions":[{"type":"gpio","pin":46,"level":0}]}
+I (249403) Application: 🎬 [Command] 收到 1 个动作
+I (249413) Application:   [0] Action: gpio
+I (249413) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (249423) Application: 📋 [TaskQueue] 尝试获取锁...
+I (249423) Application: 📋 [TaskQueue] 锁已获取
+I (249433) Application: 📋 [TaskQueue] 取出任务: gpio, 剩余: 0
+I (249443) Application: 📋 [TaskQueue] 锁已释放
+I (249443) Application: ⚡ [Task] 执行: gpio
+I (249443) Application:   GPIO 46 -> 0 (hold 0 ms)
+I (249453) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (249453) Application: 📋 [TaskQueue] 尝试获取锁...
+I (249463) Application: 📋 [TaskQueue] 锁已获取
+I (249463) Application: 📋 [TaskQueue] 队列为空，停止
+I (250573) SystemInfo: free sram: 144455 minimal sram: 134815

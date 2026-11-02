@@ -76,3 +76,26 @@ def get_db_cursor() -> Generator[sqlite3.Cursor, None, None]:
         raise
     finally:
         cursor.close()
+
+
+def _migrate() -> None:
+    """在导入时补齐新增列（幂等）。
+
+    2026-11-01：devices 加 hw_json —— 存**这台设备此刻的实物现状**
+      {"lamp_pins": [7], "notes": ["灯组1 目前只接了 1 颗"]}
+    与 core/actions.py 的 KNOWN_BOARDS 分工：
+      KNOWN_BOARDS = 固件/设计事实（跟 config.h 一起 review）
+      hw_json      = 这台机器的实物备注与覆盖（会变，页面上可改）
+    ⚠️ 不在页面里随便塞引脚“新事实”：hw_json 只是**覆盖/补充**，界面上会标出“本机”。
+    """
+    try:
+        with get_db_cursor() as cursor:
+            cols = {row[1] for row in cursor.execute("PRAGMA table_info(devices)")}
+            if cols and "hw_json" not in cols:
+                cursor.execute("ALTER TABLE devices ADD COLUMN hw_json TEXT")
+    except sqlite3.Error:
+        # 数据库还没建表时不管；真正用到时 repo 会报错，不在这里吞掉信息
+        pass
+
+
+_migrate()

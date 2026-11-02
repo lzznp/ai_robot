@@ -1,8 +1,29 @@
 # app.py
+import os
 import sys
 import uuid
 import signal
 import asyncio
+
+# ============================================================================
+# 让 opuslib_next 找得到 opus.dll
+# ----------------------------------------------------------------------------
+# conda 环境把 opus.dll 放在 <env>\Library\bin，而这个目录**不在** Python 默认搜索路径里：
+# opuslib_next 用 ctypes.util.find_library("opus") 找它，那是按 PATH 逐个目录找 .dll 的
+# （见 opuslib_next/api/__init__.py:9）。所以从终端/IDE 直接跑 app.py 会报
+#   Exception: Could not find Opus library. Make sure it is installed.
+# 以前是靠"启动前手工把 Library\bin 加进 PATH"绕过去的（见 衔接报告 §速查卡），
+# 一旦换启动方式（例如 PyCharm 的 Run 按钮）就丢 —— 所以放在入口这里兜住，谁启动都一样。
+# 用 sys.prefix 推路径，不写死盘符，换 conda 环境/换机器都不用改。
+_conda_bin = os.path.join(sys.prefix, "Library", "bin")
+if os.path.isdir(_conda_bin):
+    os.environ["PATH"] = _conda_bin + os.pathsep + os.environ.get("PATH", "")
+    if hasattr(os, "add_dll_directory"):  # Python 3.8+ / Windows
+        try:
+            os.add_dll_directory(_conda_bin)
+        except OSError:
+            pass
+# ============================================================================
 
 from aioconsole import ainput
 from config.settings import load_config

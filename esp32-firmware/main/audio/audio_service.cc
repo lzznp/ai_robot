@@ -117,12 +117,16 @@ void AudioService::Start() {
     }, "opus_codec", 2048 * 13, this, 2, &opus_codec_task_handle_);
 
     // ═══════════════════════════════════════════════════════════
-    // ★ 新增：启动所有任务后，强制关闭麦克风
+    // 注意（2026-10-22）：这里原来有一段"MOSS 阶段"的临时代码，
+    // 启动后无条件 codec_->EnableInput(false)，把麦克风强制关死。
+    // 后果：任何板子都无法唤醒（AfeWakeWord 收不到音频，
+    //       AudioInputTask 直接报 "Should not be here, bits: 4" 并退出）。
+    // 它**不是** MOSS 台账 §七 里设计的那个"软开关"（那个要在
+    // AudioService 里加 SetMicEnabled() 总闸，尚未实现）。
+    // 所以先删掉，恢复默认行为：麦克风常开。
+    // 以后要做"只执行不听"，请按台账 §七 的方案在 EnableVoiceProcessing /
+    // EnableWakeWordDetection 里加闸，不要在这里硬关。
     // ═══════════════════════════════════════════════════════════
-    if (codec_ != nullptr) {
-        codec_->EnableInput(false);
-        ESP_LOGI(TAG, "🔇 麦克风已强制关闭（输入禁用）");
-    }
 }
 
 void AudioService::Stop() {

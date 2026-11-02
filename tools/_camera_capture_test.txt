@@ -1,0 +1,42 @@
+shot 1: ok=True msg=指令已下发到 58:e6:c5:5a:2f:fc
+shot 2: ok=True msg=指令已下发到 58:e6:c5:5a:2f:fc
+
+===== SERIAL =====
+I (102) cpu_start: GPIO 44 and 43 are used as console UART I/O pI (16554) SystemInfo: free sram: 137619 minimal sram: 133719
+I (17354) Application: 📩 OnIncomingJson: {"type":"command","payload":{"actions":[{"type":"camera","op":"capture"}]}}
+I (17354) Application: 🎬 [Command] 收到新指令
+I (17354) Application: 📦 Payload: {"actions":[{"type":"camera","op":"capture"}]}
+I (17364) Application: 🎬 [Command] 收到 1 个动作
+I (17374) Application:   [0] Action: camera
+I (17374) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (17384) Application: 📋 [TaskQueue] 尝试获取锁...
+I (17384) Application: 📋 [TaskQueue] 锁已获取
+I (17384) Application: 📋 [TaskQueue] 取出任务: camera, 剩余: 0
+I (17394) Application: 📋 [TaskQueue] 锁已释放
+I (17404) Application: ⚡ [Task] 执行: camera
+I (17404) Application:   [CAMERA] 抓帧开始 (op=capture)
+W (17964) Esp32Camera: mmap_buffers_[buf.index].length = 614400, frame.width = 640, frame.height = 480
+I (18064) Application:   [CAMERA] 抓帧成功
+I (18064) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (18064) Application: 📋 [TaskQueue] 尝试获取锁...
+I (18074) Application: 📋 [TaskQueue] 锁已获取
+I (18074) Application: 📋 [TaskQueue] 队列为空，停止
+I (20404) Application: 📩 OnIncomingJson: {"type":"command","payload":{"actions":[{"type":"camera","op":"capture"}]}}
+I (20404) Application: 🎬 [Command] 收到新指令
+I (20404) Application: 📦 Payload: {"actions":[{"type":"camera","op":"capture"}]}
+I (20414) Application: 🎬 [Command] 收到 1 个动作
+I (20414) Application:   [0] Action: camera
+I (20424) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (20424) Application: 📋 [TaskQueue] 尝试获取锁...
+I (20434) Application: 📋 [TaskQueue] 锁已获取
+I (20434) Application: 📋 [TaskQueue] 取出任务: camera, 剩余: 0
+I (20444) Application: 📋 [TaskQueue] 锁已释放
+I (20444) Application: ⚡ [Task] 执行: camera
+I (20454) Application:   [CAMERA] 抓帧开始 (op=capture)
+W (21004) Esp32Camera: mmap_buffers_[buf.index].length = 614400, frame.width = 640, frame.height = 480
+I (21094) Application:   [CAMERA] 抓帧成功
+I (21094) Application: 📋 [TaskQueue] ProcessNextTask 进入
+I (21094) Application: 📋 [TaskQueue] 尝试获取锁...
+I (21104) Application: 📋 [TaskQueue] 锁已获取
+I (21104) Application: 📋 [TaskQueue] 队列为空，停止
+I (22554) AudioCodec: Set output enable to false

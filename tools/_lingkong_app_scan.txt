@@ -1,0 +1,85 @@
+dump=lingkong_flash_16MB_20261027.bin
+app range=0x20000..0x410000  read=4128768 bytes
+
+=== app description ===
+project   : xiaozhi
+version   : 2.0.5
+compile   : 09:43:47  Jul 21 2026
+(对照串口日志: 2.0.5 / Jul 21 2026 09:43:47)
+
+=== 灯相关关键词（在 app 里出现的字符串）===
+
+[led_strip] 命中 0 条
+
+[ws2812] 命中 0 条
+
+[WS2812] 命中 0 条
+
+[lamp] 命中 0 条
+
+[Lamp] 命中 0 条
+
+[LAMP] 命中 0 条
+
+[LEDC] 命中 5 条
+    LEDC
+    LEDC is not initialized
+    esp_clk_tree_enable_src((soc_module_clk_t)LEDC_LL_GLOBAL_CLK_DEFAULT, true)
+    glb_clk != LEDC_SLOW_CLK_UNINIT
+    speed_mode != LEDC_LOW_SPEED_MODE
+
+[ledc] 命中 18 条
+    //IDF/components/esp_driver_ledc/src/ledc.c
+    /IDF/components/hal/ledc_hal_iram.c
+    E (%lu) %s: %s(%d): ledc_channel argument is invalid
+    E (%lu) %s: %s(%d): ledc_conf argument is invalid
+    E (%lu) %s: %s(%d): timer hasn't been configured, or it is still running, please stop it with ledc_timer_pause first
+    ledc
+    ledc_bind_channel_timer
+    ledc_channel_config
+    ledc_hal_set_fade_param
+    ledc_set_duty
+    ledc_set_duty_with_hpoint
+    ledc_set_timer_div
+
+[rgb] 命中 5 条
+                background-color: rgba(0, 0, 0, 0.5);
+                background-color: rgba(0, 0, 0, 0.8);
+                border: 6px solid rgba(255, 255, 255, 0.3);
+    esp_lcd_rgb_panel_get_frame_buffer
+    lcd_panel.rgb
+
+[RGB] 命中 9 条
+    <RGBP
+    BRGBBAB24RGB3BGR3YU12AR24V308OUEVRGBLBGRLBGRBYUYVUYVY444P
+    BRGBLRGBBGREYYUYVUYVY422PRGB3RGBR
+    E (%lu) %s: %s(%d): DMA buffer can be used only in display color format RGB565 (not aligned copy)!
+    E (%lu) %s: %s(%d): Get RGB buffers failed
+    E (%lu) %s: %s(%d): Monochrome can be used only in display color format RGB565 or I1!
+    E (%lu) %s: %s(%d): Swap bytes can be used only in display color format RGB565!
+    E (%lu) %s: %s(%d): unsupported RGB element order
+    sRGB
+
+[SingleLed] 命中 0 条
+
+[CircularStrip] 命中 0 条
+
+[LedStrip] 命中 0 条
+
+[SetOutputState] 命中 0 条
+
+[TCA6408] 命中 0 条
+
+=== self.* 字符串（12 条）===
+    self.assets.set_download_url
+    self.audio_speaker.set_volume
+    self.camera.take_photo
+    self.get_device_status
+    self.get_system_info
+    self.reboot
+    self.screen.get_info
+    self.screen.preview_image
+    self.screen.set_brightness
+    self.screen.set_theme
+    self.screen.snapshot
+    self.upgrade_firmware
